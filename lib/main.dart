@@ -4,8 +4,9 @@ import 'config/theme.dart';
 import 'config/routes.dart';
 import 'services/locator.dart';
 
-void main() {
-  setupLocator();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await setupLocator();
   runApp(const MyApp());
 }
 

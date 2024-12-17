@@ -16,6 +16,45 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _supportsBiometrics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final canAuthenticate = await widget.authService.canUseBiometrics();
+    setState(() {
+      _supportsBiometrics = canAuthenticate;
+    });
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    try {
+      setState(() => _isLoading = true);
+      final success = await widget.authService.authenticateWithBiometrics();
+      setState(() => _isLoading = false);
+
+      if (!mounted) return;
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Biometric authentication failed')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
+  }
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
@@ -25,6 +64,33 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
+
+      if (success && mounted) {
+        // Ask user if they want to enable biometric login
+        final shouldEnableBiometric = await showCupertinoDialog<bool>(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Enable Biometric Login'),
+            content: const Text(
+                'Would you like to enable fingerprint login for faster access?'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('No'),
+                onPressed: () => Navigator.pop(context, false),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                child: const Text('Yes'),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldEnableBiometric == true) {
+          await widget.authService.enableBiometric();
+        }
+      }
 
       setState(() => _isLoading = false);
 
@@ -103,12 +169,42 @@ class _LoginScreenState extends State<LoginScreen> {
                         validator: Validators.password,
                       ),
                       const SizedBox(height: 24),
-                      _isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : ElevatedButton(
-                              onPressed: _login,
-                              child: const Text('Login'),
+                      Column(
+                        children: [
+                          if (_supportsBiometrics)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: CupertinoButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : _authenticateWithBiometrics,
+                                color: CupertinoColors.systemBlue,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.fingerprint,
+                                      color: CupertinoColors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Login with Biometrics',
+                                      style: TextStyle(
+                                        color: CupertinoColors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
+                          _isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ElevatedButton(
+                                  onPressed: _login,
+                                  child: const Text('Login'),
+                                ),
+                        ],
+                      ),
                       const Spacer(),
                       TextButton(
                         onPressed: () {
