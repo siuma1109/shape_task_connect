@@ -12,6 +12,6 @@ class AppRoutes {
         '/login': (context) => LoginScreen(authService: _authService),
         '/register': (context) => RegisterScreen(authService: _authService),
         '/home': (context) =>
-            MyHomePage(title: 'Home Page', authService: _authService),
+            HomeScreen(title: 'Home Page', authService: _authService),
       };
 }
