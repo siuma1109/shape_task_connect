@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Welcome, ${userDetails?.username ?? "User"}!',
+                'Welcome, ${userDetails?.username ?? "User"}, id: ${userDetails?.id ?? "N/A"}!',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
