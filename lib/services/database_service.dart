@@ -24,6 +24,7 @@ class DatabaseService {
       CREATE TABLE users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE,
+        username TEXT,
         password TEXT
       )
     ''');

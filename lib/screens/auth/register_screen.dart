@@ -14,6 +14,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -23,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       bool success = await widget.authService.register(
         _emailController.text,
+        _usernameController.text,
         _passwordController.text,
       );
 
@@ -97,6 +99,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          prefixIcon: Icon(CupertinoIcons.person),
+                        ),
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a username';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
                         controller: _passwordController,
                         decoration: const InputDecoration(
                           labelText: 'Password',
@@ -105,6 +122,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         validator: Validators.password,
+                        onChanged: (value) {
+                          _passwordController.text = value;
+                        },
                       ),
                       const SizedBox(height: 24),
                       _isLoading

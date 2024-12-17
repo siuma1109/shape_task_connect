@@ -22,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userDetails = widget.authService.currentUserDetails;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -41,18 +43,18 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                CupertinoIcons.home,
+                CupertinoIcons.person_circle_fill,
                 size: 100,
                 color: CupertinoColors.systemGrey,
               ),
               const SizedBox(height: 16),
               Text(
-                'Welcome to the Home Page!',
+                'Welcome, ${userDetails?.username ?? "User"}!',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Text(
-                'You are now signed in',
+                userDetails?.email ?? '',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: CupertinoColors.systemGrey,
                     ),
