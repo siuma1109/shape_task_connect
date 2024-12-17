@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shape_task_connect/widgets/main_wrapper.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../services/auth_service.dart';
@@ -12,6 +13,6 @@ class AppRoutes {
         '/login': (context) => LoginScreen(authService: _authService),
         '/register': (context) => RegisterScreen(authService: _authService),
         '/home': (context) =>
-            HomeScreen(title: 'Home Page', authService: _authService),
+            MainWrapper(title: 'Task Connect', authService: _authService),
       };
 }
