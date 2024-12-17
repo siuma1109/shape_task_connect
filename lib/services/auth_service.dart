@@ -1,35 +1,32 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import '../repositories/user_repository.dart';
+import '../models/user.dart';
 
 class AuthService {
-  static const String _tokenKey = 'auth_token';
+  final UserRepository _userRepository;
+  String? _currentUser;
 
-  Future<bool> register(String email, String password) async {
-    // TODO: Implement actual API registration
-    // This is a mock implementation
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+  AuthService(this._userRepository);
+
+  String? get currentUser => _currentUser;
+
+  Future<bool> isLoggedIn() async {
+    return _currentUser != null;
   }
 
   Future<bool> login(String email, String password) async {
-    // TODO: Implement actual API login
-    // This is a mock implementation
-    await Future.delayed(const Duration(seconds: 1));
-    await _saveToken('mock_token');
-    return true;
+    bool isValid = await _userRepository.validateUser(email, password);
+    if (isValid) {
+      _currentUser = email;
+    }
+    return isValid;
+  }
+
+  Future<bool> register(String email, String password) async {
+    final user = User(email: email, password: password);
+    return await _userRepository.createUser(user);
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-  }
-
-  Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-  }
-
-  Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey) != null;
+    _currentUser = null;
   }
 }
