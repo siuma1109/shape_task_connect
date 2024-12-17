@@ -20,7 +20,7 @@ class AuthWrapper extends StatelessWidget {
 
         final bool isLoggedIn = snapshot.data ?? false;
         return isLoggedIn
-            ? MyHomePage(title: 'Home Page', authService: _authService)
+            ? HomeScreen(title: 'Home Page', authService: _authService)
             : LoginScreen(authService: _authService);
       },
     );

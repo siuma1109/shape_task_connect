@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../services/auth_service.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title, required this.authService});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.title, required this.authService});
 
   final String title;
   final AuthService authService;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _HomeScreenState extends State<HomeScreen> {
   Future<void> _logout() async {
     await widget.authService.logout();
     if (mounted) {
