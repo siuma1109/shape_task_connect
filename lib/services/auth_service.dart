@@ -62,21 +62,48 @@ class AuthService {
 
   Future<bool> canUseBiometrics() async {
     try {
+      // First check if the device supports biometrics
       final bool canAuthenticateWithBiometrics =
           await _localAuth.canCheckBiometrics;
       final bool canAuthenticate =
           canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
-      return canAuthenticate;
+
+      if (!canAuthenticate) {
+        return false;
+      }
+
+      // Then check for available biometrics
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+
+      // For Android simulator debugging
+      print('Available biometrics: $availableBiometrics');
+      print('Can authenticate with biometrics: $canAuthenticateWithBiometrics');
+      print('Device supported: ${await _localAuth.isDeviceSupported()}');
+
+      // Check if any biometric is actually enrolled
+      return availableBiometrics.isNotEmpty &&
+          (availableBiometrics.contains(BiometricType.face) ||
+              availableBiometrics.contains(BiometricType.fingerprint) ||
+              availableBiometrics.contains(BiometricType.strong) ||
+              availableBiometrics.contains(BiometricType.weak));
     } catch (e) {
+      print('Error checking biometrics: $e');
       return false;
     }
   }
 
-  Future<List<BiometricType>> getAvailableBiometrics() async {
+  Future<String> getBiometricType() async {
     try {
-      return await _localAuth.getAvailableBiometrics();
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+
+      if (availableBiometrics.contains(BiometricType.face)) {
+        return 'Face ID';
+      } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+        return 'Fingerprint';
+      }
+      return 'Biometrics';
     } catch (e) {
-      return [];
+      return 'Biometrics';
     }
   }
 
@@ -97,8 +124,9 @@ class AuthService {
         return false;
       }
 
+      final biometricType = await getBiometricType();
       final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Scan your fingerprint to authenticate',
+        localizedReason: 'Authenticate using your $biometricType',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,

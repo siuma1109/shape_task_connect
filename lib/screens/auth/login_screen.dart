@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _supportsBiometrics = false;
+  String _biometricType = 'Biometrics';
 
   @override
   void initState() {
@@ -25,10 +26,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _checkBiometrics() async {
-    final canAuthenticate = await widget.authService.canUseBiometrics();
-    setState(() {
-      _supportsBiometrics = canAuthenticate;
-    });
+    try {
+      final canAuthenticate = await widget.authService.canUseBiometrics();
+      final biometricType = await widget.authService.getBiometricType();
+
+      print('Can authenticate: $canAuthenticate');
+      print('Biometric type: $biometricType');
+
+      setState(() {
+        _supportsBiometrics = canAuthenticate;
+        _biometricType = biometricType;
+      });
+    } catch (e) {
+      print('Error checking biometrics: $e');
+    }
   }
 
   Future<void> _authenticateWithBiometrics() async {
@@ -182,14 +193,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
-                                      Icons.fingerprint,
-                                      color: CupertinoColors.white,
-                                    ),
                                     const SizedBox(width: 8),
-                                    const Text(
-                                      'Login with Biometrics',
-                                      style: TextStyle(
+                                    Text(
+                                      'Login with $_biometricType',
+                                      style: const TextStyle(
                                         color: CupertinoColors.white,
                                       ),
                                     ),
