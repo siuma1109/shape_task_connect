@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validators.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   final AuthService authService;
