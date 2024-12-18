@@ -29,7 +29,8 @@ class DatabaseService {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           email TEXT UNIQUE,
           username TEXT,
-          password TEXT
+          password TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       ''');
 
@@ -40,8 +41,21 @@ class DatabaseService {
           title TEXT NOT NULL,
           description TEXT NOT NULL,
           created_by INTEGER NOT NULL,
-          created_at INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+      ''');
+
+      // Create task_users table for users joining tasks
+      await txn.execute('''
+        CREATE TABLE task_users(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+          UNIQUE(task_id, user_id)
         )
       ''');
 
@@ -52,10 +66,18 @@ class DatabaseService {
           task_id INTEGER NOT NULL,
           user_id INTEGER NOT NULL,
           content TEXT NOT NULL,
+<<<<<<< HEAD
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          latitude REAL,
+          longitude REAL,
+          address TEXT,
+          photo_path TEXT
+=======
           created_at TEXT NOT NULL,
           latitude REAL,
           longitude REAL,
           address TEXT
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
         )
       ''');
 

@@ -7,17 +7,19 @@ class Comment {
   final double? latitude;
   final double? longitude;
   final String? address;
+  final String? photoPath;
 
   Comment({
     this.id,
     required this.taskId,
     required this.userId,
     required this.content,
-    required this.createdAt,
+    DateTime? createdAt,
     this.latitude,
     this.longitude,
     this.address,
-  });
+    this.photoPath,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     final map = {
@@ -28,6 +30,7 @@ class Comment {
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
+      'photo_path': photoPath,
     };
     if (id != null) map['id'] = id;
     return map;
@@ -38,11 +41,12 @@ class Comment {
       id: map['id'] as int?,
       taskId: map['task_id'] as int,
       userId: map['user_id'] as int,
-      content: map['content'],
-      createdAt: DateTime.parse(map['created_at']),
-      latitude: map['latitude'],
-      longitude: map['longitude'],
-      address: map['address'],
+      content: map['content'] as String,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      latitude: map['latitude'] as double?,
+      longitude: map['longitude'] as double?,
+      address: map['address'] as String?,
+      photoPath: map['photo_path'],
     );
   }
 }
