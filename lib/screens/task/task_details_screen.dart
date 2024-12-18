@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/task_item.dart';
 import '../../widgets/task/task_card.dart';
-import '../../widgets/chat/chat_section.dart';
 import '../../widgets/task/task_comments.dart';
 
 class TaskDetailsScreen extends StatelessWidget {
@@ -22,6 +21,7 @@ class TaskDetailsScreen extends StatelessWidget {
         ),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TaskCard(
             todo: task,

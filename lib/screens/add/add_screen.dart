@@ -32,7 +32,7 @@ class _AddScreenState extends State<AddScreen> {
 
       try {
         final task = TaskItem(
-          id: DateTime.now().toString(),
+          id: DateTime.now().millisecondsSinceEpoch,
           title: _titleController.text,
           description: _descriptionController.text,
           createdBy: 1, // Using test user ID

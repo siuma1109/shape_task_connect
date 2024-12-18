@@ -36,7 +36,7 @@ class DatabaseService {
       // Create tasks table
       await txn.execute('''
         CREATE TABLE tasks(
-          id TEXT PRIMARY KEY,
+          id INTEGER PRIMARY KEY,
           title TEXT NOT NULL,
           description TEXT NOT NULL,
           created_by INTEGER NOT NULL,
@@ -48,13 +48,14 @@ class DatabaseService {
       // Create comments table
       await txn.execute('''
         CREATE TABLE comments(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          task_id TEXT NOT NULL,
+          id INTEGER PRIMARY KEY,
+          task_id INTEGER NOT NULL,
           user_id INTEGER NOT NULL,
           content TEXT NOT NULL,
-          created_at INTEGER NOT NULL,
-          FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
-          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+          created_at TEXT NOT NULL,
+          latitude REAL,
+          longitude REAL,
+          address TEXT
         )
       ''');
 

@@ -18,7 +18,7 @@ class CommentRepository {
   }
 
   // Read
-  Future<List<Comment>> getCommentsByTask(String taskId) async {
+  Future<List<Comment>> getCommentsByTask(int taskId) async {
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'comments',
@@ -76,7 +76,7 @@ class CommentRepository {
   }
 
   // Delete all comments for a task
-  Future<int> deleteTaskComments(String taskId) async {
+  Future<int> deleteTaskComments(int taskId) async {
     final db = await _databaseService.database;
     return await db.delete(
       'comments',
@@ -86,7 +86,7 @@ class CommentRepository {
   }
 
   // Count comments for a task
-  Future<int> countTaskComments(String taskId) async {
+  Future<int> countTaskComments(int taskId) async {
     final db = await _databaseService.database;
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM comments WHERE task_id = ?',

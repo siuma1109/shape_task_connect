@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/comment.dart';
 import '../../repositories/comment_repository.dart';
+import '../../services/location_service.dart';
 
 class TaskComments extends StatefulWidget {
-  final String taskId;
+  final int taskId;
 
   const TaskComments({
     super.key,
@@ -18,6 +19,7 @@ class TaskComments extends StatefulWidget {
 class _TaskCommentsState extends State<TaskComments> {
   final _commentRepository = GetIt.instance<CommentRepository>();
   final _commentController = TextEditingController();
+  final _locationService = GetIt.instance<LocationService>();
   late Future<List<Comment>> _commentsFuture;
 
   @override
@@ -70,6 +72,63 @@ class _TaskCommentsState extends State<TaskComments> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _shareLocation() async {
+    final hasPermission = await _locationService.checkPermission(context);
+    if (!hasPermission) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Location permission is required'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final locationData = await _locationService.getCurrentLocation();
+    if (locationData == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to get location'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final comment = Comment(
+        taskId: widget.taskId,
+        userId: 1, // TODO: Get actual user ID
+        content: '📍 Shared a location',
+        createdAt: DateTime.now(),
+        latitude: locationData['latitude'],
+        longitude: locationData['longitude'],
+        address: locationData['address'],
+      );
+
+      await _commentRepository.createComment(comment);
+      _loadComments();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Location shared successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to share location'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -132,34 +191,27 @@ class _TaskCommentsState extends State<TaskComments> {
                   itemCount: comments.length,
                   itemBuilder: (context, index) {
                     final comment = comments[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'User ${comment.userId}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  comment.createdAt.toString(),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
+                    return ListTile(
+                      title: Text('User ${comment.userId}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(comment.content),
+                          if (comment.address != null)
+                            InkWell(
+                              onTap: () => _locationService.openMap(
+                                comment.latitude!,
+                                comment.longitude!,
+                              ),
+                              child: Text(
+                                '📍 ${comment.address}',
+                                style: TextStyle(
+                                    color: Theme.of(context).primaryColor),
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(comment.content),
-                          ],
-                        ),
+                        ],
                       ),
+                      trailing: Text(_formatDate(comment.createdAt)),
                     );
                   },
                 );
@@ -181,6 +233,10 @@ class _TaskCommentsState extends State<TaskComments> {
           ),
           child: Row(
             children: [
+              IconButton(
+                icon: const Icon(Icons.attach_file),
+                onPressed: _shareLocation,
+              ),
               Expanded(
                 child: TextField(
                   controller: _commentController,
@@ -207,5 +263,9 @@ class _TaskCommentsState extends State<TaskComments> {
         ),
       ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
   }
 }

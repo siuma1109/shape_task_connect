@@ -5,6 +5,7 @@ import '../repositories/user_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../repositories/task_repository.dart';
 import '../repositories/comment_repository.dart';
+import 'location_service.dart';
 
 final locator = GetIt.instance;
 
@@ -25,4 +26,7 @@ Future<void> setupLocator() async {
   );
   locator.registerLazySingleton(
       () => CommentRepository(locator<DatabaseService>()));
+
+  // Register LocationService
+  GetIt.instance.registerLazySingleton(() => LocationService());
 }
