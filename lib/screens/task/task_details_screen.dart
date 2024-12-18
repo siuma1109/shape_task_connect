@@ -34,7 +34,7 @@ class TaskDetailsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text('Task ID: ${task.id}'),
-                Text('Created by: ${task.creatorName}'),
+                Text('Created by: User ${task.createdBy}'),
                 Text('Created at: ${task.createdAt.toString()}'),
               ],
             ),
