@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../models/task_item.dart';
+import '../../screens/task/task_details_screen.dart';
 
 class TaskActions extends StatelessWidget {
   final TaskItem todo;
@@ -31,7 +32,12 @@ class TaskActions extends StatelessWidget {
               IconButton(
                 icon: const Icon(CupertinoIcons.chat_bubble_2),
                 onPressed: () {
-                  // TODO: Implement comments
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TaskDetailsScreen(task: todo),
+                    ),
+                  );
                 },
                 tooltip: 'Comments',
               ),

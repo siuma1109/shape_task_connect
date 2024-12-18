@@ -24,29 +24,19 @@ class TaskCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       elevation: 0,
       child: isClickable && !isInDetails
-          ? Stack(
-              children: [
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TaskDetailsScreen(task: todo),
-                      ),
-                    );
-                  },
-                  child: _buildContent(),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: false,
-                    child: TaskActions(todo: todo, isInDetails: isInDetails),
+          ? InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TaskDetailsScreen(task: todo),
                   ),
-                ),
-              ],
+                );
+              },
+              child: AbsorbPointer(
+                absorbing: false,
+                child: _buildContent(),
+              ),
             )
           : _buildContent(),
     );
@@ -58,8 +48,7 @@ class TaskCard extends StatelessWidget {
       children: [
         TaskHeader(todo: todo),
         TaskContent(todo: todo),
-        if (!isClickable || !isInDetails)
-          TaskActions(todo: todo, isInDetails: isInDetails),
+        TaskActions(todo: todo, isInDetails: isInDetails),
       ],
     );
   }
