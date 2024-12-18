@@ -9,8 +9,7 @@ class DemoData {
         title: 'Complete Flutter Project ${index + 1}',
         description:
             'Finish the task management app ${index + 1} - looking for contributors!',
-        createdBy: 'user-${index % 3}',
-        creatorName: index % 2 == 0 ? 'John Doe' : 'Jane Smith',
+        createdBy: index % 3,
         createdAt: DateTime.now().subtract(Duration(days: index)),
       ),
     );
