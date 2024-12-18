@@ -7,15 +7,37 @@ class TaskRepository {
 
   TaskRepository(this._databaseService);
 
-  // Create
   Future<int> createTask(TaskItem task) async {
+    final db = await _databaseService.database;
+    return await db.insert(
+      'tasks',
+      task.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.abort,
+    );
+  }
+
+  Future<bool> joinTask(int taskId, int userId) async {
+    final db = await _databaseService.database;
     try {
-      final db = await _databaseService.database;
-      await db.insert('tasks', task.toMap());
-      return task.id;
+      await db.insert(
+        'task_users',
+        {
+          'task_id': taskId,
+          'user_id': userId,
+          'created_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+      return true;
     } catch (e) {
-      rethrow;
+      return false;
     }
+  }
+
+  Future<List<TaskItem>> getTasks() async {
+    final db = await _databaseService.database;
+    final List<Map<String, dynamic>> maps = await db.query('tasks');
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
   // Read
@@ -116,9 +138,27 @@ class TaskRepository {
     });
   }
 
-  Future<List<TaskItem>> getTasks() async {
+  Future<bool> isUserJoined(int taskId, int userId) async {
     final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks');
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+    final result = await db.query(
+      'task_users',
+      where: 'task_id = ? AND user_id = ?',
+      whereArgs: [taskId, userId],
+    );
+    return result.isNotEmpty;
+  }
+
+  Future<bool> leaveTask(int taskId, int userId) async {
+    final db = await _databaseService.database;
+    try {
+      await db.delete(
+        'task_users',
+        where: 'task_id = ? AND user_id = ?',
+        whereArgs: [taskId, userId],
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

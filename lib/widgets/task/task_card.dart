@@ -71,7 +71,7 @@ class _TaskCardState extends State<TaskCard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TaskActions(todo: widget.todo, isInDetails: widget.isInDetails),
+            TaskActions(task: widget.todo),
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: FutureBuilder<int>(
