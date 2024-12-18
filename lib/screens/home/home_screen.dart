@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../services/auth_service.dart';
+import '../../models/task_item.dart';
+import '../../widgets/task/task_card.dart';
+import '../../utils/demo_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.title, required this.authService});
@@ -13,6 +16,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Replace temporary mock data with demo data generator
+  final List<TaskItem> _todoItems = DemoData.generateTasks(5);
+
+  List<TaskItem> get _visibleTaskItems => _todoItems;
+
   Future<void> _logout() async {
     await widget.authService.logout();
     if (mounted) {
@@ -22,8 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userDetails = widget.authService.currentUserDetails;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -32,36 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(CupertinoIcons.chat_bubble_2),
+            onPressed: () {
+              // TODO: Implement chat feature
+            },
+          ),
+          IconButton(
             icon: const Icon(CupertinoIcons.square_arrow_right),
             onPressed: _logout,
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                CupertinoIcons.person_circle_fill,
-                size: 100,
-                color: CupertinoColors.systemGrey,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Welcome, ${userDetails?.username ?? "User"}, id: ${userDetails?.id ?? "N/A"}!',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                userDetails?.email ?? '',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: CupertinoColors.systemGrey,
-                    ),
-              ),
-            ],
-          ),
-        ),
+      body: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: _visibleTaskItems.length,
+        itemBuilder: (context, index) {
+          final todo = _visibleTaskItems[index];
+          return TaskCard(todo: todo);
+        },
       ),
     );
   }

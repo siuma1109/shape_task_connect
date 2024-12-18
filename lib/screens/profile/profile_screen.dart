@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import '../../services/auth_service.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final AuthService authService;
+
+  const ProfileScreen({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
