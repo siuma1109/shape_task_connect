@@ -17,7 +17,7 @@ class TaskHeader extends StatelessWidget {
             radius: 16,
             backgroundColor: Theme.of(context).primaryColor,
             child: Text(
-              todo.creatorName[0].toUpperCase(),
+              todo.createdBy.toString(),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -30,7 +30,7 @@ class TaskHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  todo.creatorName,
+                  'User ${todo.createdBy}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
