@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'widgets/auth_wrapper.dart';
+import 'screens/app_screen.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'services/locator.dart';
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       title: 'Task Connect',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: AuthWrapper(),
+      home: AppScreen(),
       routes: AppRoutes.routes,
     );
   }

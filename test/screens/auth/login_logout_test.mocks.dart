@@ -6,6 +6,7 @@
 import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i4;
 import 'package:shape_task_connect/services/auth_service.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -26,14 +27,44 @@ import 'package:shape_task_connect/services/auth_service.dart' as _i2;
 /// See the documentation for Mockito's code generation for more information.
 class MockAuthService extends _i1.Mock implements _i2.AuthService {
   @override
-  _i3.Future<bool> isLoggedIn() => (super.noSuchMethod(
+  _i3.Future<bool> checkLoginStatus() => (super.noSuchMethod(
         Invocation.method(
-          #isLoggedIn,
+          #checkLoginStatus,
           [],
         ),
         returnValue: _i3.Future<bool>.value(false),
         returnValueForMissingStub: _i3.Future<bool>.value(false),
       ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<bool> isBiometricEnabled() => (super.noSuchMethod(
+        Invocation.method(
+          #isBiometricEnabled,
+          [],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+        returnValueForMissingStub: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<void> enableBiometric() => (super.noSuchMethod(
+        Invocation.method(
+          #enableBiometric,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<void> disableBiometric() => (super.noSuchMethod(
+        Invocation.method(
+          #disableBiometric,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
   _i3.Future<bool> login(
@@ -55,6 +86,7 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
   @override
   _i3.Future<bool> register(
     String? email,
+    String? username,
     String? password,
   ) =>
       (super.noSuchMethod(
@@ -62,6 +94,7 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
           #register,
           [
             email,
+            username,
             password,
           ],
         ),
@@ -78,4 +111,47 @@ class MockAuthService extends _i1.Mock implements _i2.AuthService {
         returnValue: _i3.Future<void>.value(),
         returnValueForMissingStub: _i3.Future<void>.value(),
       ) as _i3.Future<void>);
+
+  @override
+  _i3.Future<bool> canUseBiometrics() => (super.noSuchMethod(
+        Invocation.method(
+          #canUseBiometrics,
+          [],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+        returnValueForMissingStub: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
+
+  @override
+  _i3.Future<String> getBiometricType() => (super.noSuchMethod(
+        Invocation.method(
+          #getBiometricType,
+          [],
+        ),
+        returnValue: _i3.Future<String>.value(_i4.dummyValue<String>(
+          this,
+          Invocation.method(
+            #getBiometricType,
+            [],
+          ),
+        )),
+        returnValueForMissingStub:
+            _i3.Future<String>.value(_i4.dummyValue<String>(
+          this,
+          Invocation.method(
+            #getBiometricType,
+            [],
+          ),
+        )),
+      ) as _i3.Future<String>);
+
+  @override
+  _i3.Future<bool> authenticateWithBiometrics() => (super.noSuchMethod(
+        Invocation.method(
+          #authenticateWithBiometrics,
+          [],
+        ),
+        returnValue: _i3.Future<bool>.value(false),
+        returnValueForMissingStub: _i3.Future<bool>.value(false),
+      ) as _i3.Future<bool>);
 }
