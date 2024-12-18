@@ -66,11 +66,18 @@ class DatabaseService {
           task_id INTEGER NOT NULL,
           user_id INTEGER NOT NULL,
           content TEXT NOT NULL,
+<<<<<<< HEAD
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           latitude REAL,
           longitude REAL,
           address TEXT,
           photo_path TEXT
+=======
+          created_at TEXT NOT NULL,
+          latitude REAL,
+          longitude REAL,
+          address TEXT
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
         )
       ''');
 

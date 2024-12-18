@@ -3,8 +3,11 @@ import 'package:get_it/get_it.dart';
 import '../../models/comment.dart';
 import '../../repositories/comment_repository.dart';
 import '../../services/location_service.dart';
+<<<<<<< HEAD
 import '../../services/photo_service.dart';
 import 'dart:io';
+=======
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
 
 class TaskComments extends StatefulWidget {
   final int taskId;
@@ -22,7 +25,10 @@ class _TaskCommentsState extends State<TaskComments> {
   final _commentRepository = GetIt.instance<CommentRepository>();
   final _commentController = TextEditingController();
   final _locationService = GetIt.instance<LocationService>();
+<<<<<<< HEAD
   final _photoService = GetIt.instance<PhotoService>();
+=======
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
   late Future<List<Comment>> _commentsFuture;
 
   @override
@@ -135,6 +141,7 @@ class _TaskCommentsState extends State<TaskComments> {
     }
   }
 
+<<<<<<< HEAD
   Future<void> _uploadPhoto({required bool fromCamera}) async {
     final photoPath =
         await _photoService.pickAndSavePhoto(fromCamera: fromCamera);
@@ -207,6 +214,8 @@ class _TaskCommentsState extends State<TaskComments> {
     );
   }
 
+=======
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -284,6 +293,7 @@ class _TaskCommentsState extends State<TaskComments> {
                                     color: Theme.of(context).primaryColor),
                               ),
                             ),
+<<<<<<< HEAD
                           if (comment.photoPath != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
@@ -294,6 +304,8 @@ class _TaskCommentsState extends State<TaskComments> {
                                 fit: BoxFit.cover,
                               ),
                             ),
+=======
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
                         ],
                       ),
                       trailing: Text(_formatDate(comment.createdAt)),
@@ -320,7 +332,11 @@ class _TaskCommentsState extends State<TaskComments> {
             children: [
               IconButton(
                 icon: const Icon(Icons.attach_file),
+<<<<<<< HEAD
                 onPressed: _showAttachmentOptions,
+=======
+                onPressed: _shareLocation,
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
               ),
               Expanded(
                 child: TextField(
