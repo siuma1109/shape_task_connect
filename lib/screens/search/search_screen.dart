@@ -6,6 +6,7 @@ import '../../widgets/task/task_card.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../widgets/user/user_details.dart';
+import '../../widgets/task/task_list.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -126,7 +127,12 @@ class SearchScreenState extends State<SearchScreen> {
                       _userSuggestions.isNotEmpty)
                     Expanded(child: _buildUserSuggestions())
                   else
-                    Expanded(child: _buildTasksList()),
+                    Expanded(
+                      child: TaskList(
+                        tasks: _filteredTasks,
+                        onRefresh: refreshTasks,
+                      ),
+                    ),
                 ],
               ),
       ),
@@ -209,16 +215,6 @@ class SearchScreenState extends State<SearchScreen> {
             );
           },
         );
-      },
-    );
-  }
-
-  Widget _buildTasksList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _filteredTasks.length,
-      itemBuilder: (context, index) {
-        return TaskCard(todo: _filteredTasks[index]);
       },
     );
   }
