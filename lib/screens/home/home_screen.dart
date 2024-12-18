@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../models/task_item.dart';
 import '../../widgets/task/task_card.dart';
 import '../../services/database_service.dart';
+import '../../repositories/task_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -21,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> {
-  final _databaseService = GetIt.instance<DatabaseService>();
+  final _taskRepository = GetIt.instance<TaskRepository>();
   late Future<List<TaskItem>> _tasksFuture;
 
   @override
@@ -32,7 +33,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _loadTasks() {
     setState(() {
-      _tasksFuture = _databaseService.getAllTasks();
+      _tasksFuture = _taskRepository.getAllTasks();
     });
   }
 

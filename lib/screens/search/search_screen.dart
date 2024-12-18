@@ -1,28 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../../models/task_item.dart';
+import '../../models/user.dart';
 import '../../widgets/task/task_card.dart';
-import '../../utils/demo_data.dart';
+import '../../repositories/task_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../widgets/user/user_details.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<SearchScreen> createState() => SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final _taskRepository = GetIt.instance<TaskRepository>();
+  final _userRepository = GetIt.instance<UserRepository>();
   bool _showSearchBar = false;
   bool _isSearchingTasks = false;
-  List<String> _userSuggestions = [];
-  List<TaskItem> _allTasks = []; // Original list of all tasks
-  List<TaskItem> _filteredTasks = []; // Filtered tasks for search results
+  bool _isLoading = false;
+  List<User> _userSuggestions = [];
+  List<TaskItem> _allTasks = [];
+  List<TaskItem> _filteredTasks = [];
 
   @override
   void initState() {
     super.initState();
-    _allTasks = DemoData.generateTasks();
-    _filteredTasks = List.from(_allTasks);
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final tasks = await _taskRepository.getAllTasks();
+      if (mounted) {
+        setState(() {
+          _allTasks = tasks;
+          _filteredTasks = List.from(_allTasks);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> refreshTasks() async {
+    await _loadTasks();
   }
 
   @override
@@ -64,6 +97,10 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: refreshTasks,
+          ),
+          IconButton(
             icon: Icon(_showSearchBar ? Icons.close : Icons.search),
             onPressed: () {
               if (_showSearchBar) {
@@ -77,25 +114,26 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          if (_showSearchBar &&
-              _searchController.text.isNotEmpty &&
-              !_isSearchingTasks &&
-              _userSuggestions.isNotEmpty)
-            Expanded(
-              child: _buildUserSuggestions(),
-            )
-          else
-            Expanded(
-              child: _buildTasksList(),
-            ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: refreshTasks,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  if (_showSearchBar &&
+                      _searchController.text.isNotEmpty &&
+                      !_isSearchingTasks &&
+                      _userSuggestions.isNotEmpty)
+                    Expanded(child: _buildUserSuggestions())
+                  else
+                    Expanded(child: _buildTasksList()),
+                ],
+              ),
       ),
     );
   }
 
-  void _handleSearchChange(String query) {
+  void _handleSearchChange(String query) async {
     if (query.isEmpty) {
       setState(() {
         _userSuggestions.clear();
@@ -105,28 +143,51 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    setState(() {
-      _userSuggestions = [
-        'User 1',
-        'User 2',
-        'User 3',
-      ]
-          .where((user) => user.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-      _isSearchingTasks = false;
-    });
+    try {
+      // Search users by keyword
+      final users = await _userRepository.searchUsers(query);
+      if (mounted) {
+        setState(() {
+          _userSuggestions = users;
+          _isSearchingTasks = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _userSuggestions = [];
+          _isSearchingTasks = false;
+        });
+      }
+    }
   }
 
-  void _handleSearchSubmit(String query) {
+  Future<void> _handleSearchSubmit(String query) async {
     setState(() {
       _isSearchingTasks = true;
       _userSuggestions.clear();
-      _filteredTasks = _allTasks
-          .where((task) =>
-              task.title.toLowerCase().contains(query.toLowerCase()) ||
-              task.description.toLowerCase().contains(query.toLowerCase()))
-          .toList();
     });
+
+    try {
+      final tasks = await _taskRepository.searchTasks(query);
+      if (mounted) {
+        setState(() {
+          _filteredTasks = tasks;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _filteredTasks = [];
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error searching tasks. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildUserSuggestions() {
@@ -136,11 +197,16 @@ class _SearchScreenState extends State<SearchScreen> {
         final user = _userSuggestions[index];
         return ListTile(
           leading: CircleAvatar(
-            child: Text(user[0]),
+            child: Text(user.username[0].toUpperCase()),
           ),
-          title: Text(user),
+          title: Text(user.username),
+          subtitle: Text(user.email),
           onTap: () {
-            // TODO: Handle user selection
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => UserDetails(user: user),
+              ),
+            );
           },
         );
       },

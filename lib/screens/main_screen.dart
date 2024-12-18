@@ -24,7 +24,9 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final _homeKey = GlobalKey<HomeScreenState>();
+  final _searchKey = GlobalKey<SearchScreenState>();
   bool _wasOnHomeTab = true;
+  bool _wasOnSearchTab = true;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
             title: widget.title,
             authService: widget.authService,
           ),
-          const SearchScreen(),
+          SearchScreen(key: _searchKey),
           const AddScreen(),
           const CalendarScreen(),
           const ProfileScreen(),
@@ -51,9 +53,17 @@ class _MainScreenState extends State<MainScreen> {
               if (_selectedIndex == 0 || !_wasOnHomeTab) {
                 _homeKey.currentState?.refreshTasks();
               }
+              _wasOnHomeTab = true;
+            } else if (index == 1) {
+              if (_selectedIndex == 1 || !_wasOnSearchTab) {
+                _searchKey.currentState?.refreshTasks();
+              }
+              _wasOnSearchTab = true;
+            } else {
+              _wasOnHomeTab = false;
+              _wasOnSearchTab = false;
             }
             _selectedIndex = index;
-            _wasOnHomeTab = (index == 0);
           });
         },
         destinations: const [
