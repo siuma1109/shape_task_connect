@@ -3,9 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
 import '../../models/task_item.dart';
-import '../../widgets/task/task_card.dart';
-import '../../services/database_service.dart';
 import '../../repositories/task_repository.dart';
+import '../../widgets/task/task_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -23,7 +22,8 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final _taskRepository = GetIt.instance<TaskRepository>();
-  late Future<List<TaskItem>> _tasksFuture;
+  List<TaskItem> _tasks = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -31,14 +31,30 @@ class HomeScreenState extends State<HomeScreen> {
     _loadTasks();
   }
 
-  void _loadTasks() {
+  Future<void> _loadTasks() async {
     setState(() {
-      _tasksFuture = _taskRepository.getAllTasks();
+      _isLoading = true;
     });
+
+    try {
+      final tasks = await _taskRepository.getAllTasks();
+      if (mounted) {
+        setState(() {
+          _tasks = tasks;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> refreshTasks() async {
-    _loadTasks();
+    await _loadTasks();
   }
 
   Future<void> _logout() async {
@@ -73,44 +89,10 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: TaskList(
+        tasks: _tasks,
+        isLoading: _isLoading,
         onRefresh: refreshTasks,
-        child: FutureBuilder<List<TaskItem>>(
-          future: _tasksFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-
-            final tasks = snapshot.data ?? [];
-            if (tasks.isEmpty) {
-              return ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 100),
-                      child: Text('No tasks found'),
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            return ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: tasks.length,
-              itemBuilder: (context, index) {
-                return TaskCard(todo: tasks[index]);
-              },
-            );
-          },
-        ),
       ),
     );
   }
