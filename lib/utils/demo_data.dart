@@ -5,7 +5,7 @@ class DemoData {
     return List.generate(
       count,
       (index) => TaskItem(
-        id: 'task-$index',
+        id: index.toInt(),
         title: 'Complete Flutter Project ${index + 1}',
         description:
             'Finish the task management app ${index + 1} - looking for contributors!',
@@ -15,17 +15,16 @@ class DemoData {
     );
   }
 
-  static List<Map<String, dynamic>> generateComments(String taskId,
+  static List<Map<String, dynamic>> generateComments(int taskId,
       [int count = 3]) {
     return List.generate(
       count,
       (index) => {
         'task_id': taskId,
-        'user_id': 1, // Using test user ID
+        'user_id': 1,
         'content': 'This is comment ${index + 1} for task $taskId',
-        'created_at': DateTime.now()
-            .subtract(Duration(days: index))
-            .millisecondsSinceEpoch,
+        'created_at':
+            DateTime.now().subtract(Duration(days: index)).toIso8601String(),
       },
     );
   }

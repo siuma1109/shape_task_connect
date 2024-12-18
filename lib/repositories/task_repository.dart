@@ -8,16 +8,10 @@ class TaskRepository {
   TaskRepository(this._databaseService);
 
   // Create
-  Future<String> createTask(TaskItem task) async {
+  Future<int> createTask(TaskItem task) async {
     try {
       final db = await _databaseService.database;
-      await db.insert('tasks', {
-        'id': task.id,
-        'title': task.title,
-        'description': task.description,
-        'created_by': task.createdBy,
-        'created_at': task.createdAt.millisecondsSinceEpoch,
-      });
+      await db.insert('tasks', task.toMap());
       return task.id;
     } catch (e) {
       rethrow;
@@ -43,24 +37,15 @@ class TaskRepository {
     });
   }
 
-  Future<TaskItem?> getTask(String id) async {
+  Future<TaskItem?> getTask(int id) async {
     final db = await _databaseService.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'tasks',
       where: 'id = ?',
       whereArgs: [id],
     );
-
-    if (maps.isNotEmpty) {
-      return TaskItem(
-        id: maps[0]['id'],
-        title: maps[0]['title'],
-        description: maps[0]['description'],
-        createdBy: maps[0]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[0]['created_at']),
-      );
-    }
-    return null;
+    if (maps.isEmpty) return null;
+    return TaskItem.fromMap(maps.first);
   }
 
   // Update
@@ -129,5 +114,11 @@ class TaskRepository {
         createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
       );
     });
+  }
+
+  Future<List<TaskItem>> getTasks() async {
+    final db = await _databaseService.database;
+    final List<Map<String, dynamic>> maps = await db.query('tasks');
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 }
