@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/search/search_screen.dart';
-import '../screens/add/add_screen.dart';
-import '../screens/calendar/calendar_screen.dart';
-import '../screens/profile/profile_screen.dart';
+import 'home/home_screen.dart';
+import 'search/search_screen.dart';
+import 'add/add_screen.dart';
+import 'calendar/calendar_screen.dart';
+import 'profile/profile_screen.dart';
 import '../services/auth_service.dart';
 
-class MainWrapper extends StatefulWidget {
+class MainScreen extends StatefulWidget {
   final String title;
   final AuthService authService;
 
-  const MainWrapper({
+  const MainScreen({
     super.key,
     required this.title,
     required this.authService,
   });
 
   @override
-  State<MainWrapper> createState() => _MainWrapperState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainWrapperState extends State<MainWrapper> {
+class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   late final List<Widget> _pages;

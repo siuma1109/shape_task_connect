@@ -46,6 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       setState(() => _isLoading = true);
       final success = await widget.authService.authenticateWithBiometrics();
+
       setState(() => _isLoading = false);
 
       if (!mounted) return;
@@ -69,44 +70,44 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+      try {
+        setState(() => _isLoading = true);
 
-      bool success = await widget.authService.login(
-        _emailController.text,
-        _passwordController.text,
-      );
-
-      if (success && mounted) {
-        // Ask user if they want to enable biometric login
-        final shouldEnableBiometric = await showCupertinoDialog<bool>(
-          context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: const Text('Enable Biometric Login'),
-            content: const Text(
-                'Would you like to enable fingerprint login for faster access?'),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('No'),
-                onPressed: () => Navigator.pop(context, false),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                child: const Text('Yes'),
-                onPressed: () => Navigator.pop(context, true),
-              ),
-            ],
-          ),
+        bool success = await widget.authService.login(
+          _emailController.text,
+          _passwordController.text,
         );
 
-        if (shouldEnableBiometric == true) {
-          await widget.authService.enableBiometric();
-        }
-      }
+        setState(() => _isLoading = false);
 
-      setState(() => _isLoading = false);
+        if (!mounted) return;
 
-      if (mounted) {
         if (success) {
+          final shouldEnableBiometric = await showCupertinoDialog<bool>(
+                context: context,
+                builder: (context) => CupertinoAlertDialog(
+                  title: const Text('Enable Biometric Login'),
+                  content: const Text(
+                      'Would you like to enable fingerprint login for faster access?'),
+                  actions: [
+                    CupertinoDialogAction(
+                      child: const Text('No'),
+                      onPressed: () => Navigator.pop(context, false),
+                    ),
+                    CupertinoDialogAction(
+                      isDefaultAction: true,
+                      child: const Text('Yes'),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
+
+          if (shouldEnableBiometric) {
+            await widget.authService.enableBiometric();
+          }
+
           Navigator.pushReplacementNamed(context, '/home');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +116,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text('Login failed. Please check your email and password')),
           );
         }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
       }
     }
   }
@@ -207,6 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _isLoading
                               ? const Center(child: CircularProgressIndicator())
                               : ElevatedButton(
+                                  key: const Key('loginButton'),
                                   onPressed: _login,
                                   child: const Text('Login'),
                                 ),

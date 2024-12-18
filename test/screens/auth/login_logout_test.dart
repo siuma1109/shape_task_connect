@@ -21,6 +21,7 @@ void main() {
     // Setup mock behavior
     when(mockAuthService.login(any, any)).thenAnswer((_) async => true);
     when(mockAuthService.logout()).thenAnswer((_) async => {});
+    when(mockAuthService.enableBiometric()).thenAnswer((_) async => {});
 
     // Build login screen
     await tester.pumpWidget(
@@ -48,12 +49,26 @@ void main() {
         find.widgetWithIcon(TextFormField, CupertinoIcons.lock), 'password123');
 
     // Tap login button
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+    await tester.tap(find.byKey(const Key('loginButton')));
     await tester.pumpAndSettle();
 
+    // Verify biometric setup dialog appears
+    expect(find.text('Enable Biometric Login'), findsOneWidget);
+    expect(
+      find.text(
+          'Would you like to enable fingerprint login for faster access?'),
+      findsOneWidget,
+    );
+
+    // Tap "No" on the dialog
+    await tester.tap(find.text('No'));
+    await tester.pumpAndSettle();
+
+    // Verify biometric was not enabled
+    verifyNever(mockAuthService.enableBiometric());
+
     // Verify we're on the home screen
-    expect(find.text('Welcome to the Home Page!'), findsOneWidget);
-    expect(find.text('You are now signed in'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
 
     // Verify login was called with correct credentials
     verify(mockAuthService.login('test@example.com', 'password123')).called(1);
