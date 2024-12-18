@@ -82,7 +82,10 @@ class DatabaseService {
 
   Future<List<TaskItem>> getAllTasks() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks');
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tasks',
+      orderBy: 'created_at DESC',
+    );
 
     return List.generate(maps.length, (i) {
       return TaskItem(
