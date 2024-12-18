@@ -47,5 +47,9 @@
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID to securely log you into the app</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos for sharing in tasks.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photos access to share images in tasks.</string>
 </dict>
 </plist>

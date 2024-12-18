@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/task_item.dart';
 import '../utils/demo_data.dart';
 
 class DatabaseService {
@@ -30,19 +29,55 @@ class DatabaseService {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           email TEXT UNIQUE,
           username TEXT,
-          password TEXT
+          password TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       ''');
 
       // Create tasks table
       await txn.execute('''
         CREATE TABLE tasks(
-          id TEXT PRIMARY KEY,
+          id INTEGER PRIMARY KEY,
           title TEXT NOT NULL,
           description TEXT NOT NULL,
           created_by INTEGER NOT NULL,
-          created_at INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+      ''');
+
+      // Create task_users table for users joining tasks
+      await txn.execute('''
+        CREATE TABLE task_users(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          task_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+          UNIQUE(task_id, user_id)
+        )
+      ''');
+
+      // Create comments table
+      await txn.execute('''
+        CREATE TABLE comments(
+          id INTEGER PRIMARY KEY,
+          task_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          content TEXT NOT NULL,
+<<<<<<< HEAD
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          latitude REAL,
+          longitude REAL,
+          address TEXT,
+          photo_path TEXT
+=======
+          created_at TEXT NOT NULL,
+          latitude REAL,
+          longitude REAL,
+          address TEXT
+>>>>>>> 3e1315a607208a29c8f9fb13fe65837df8dc7e86
         )
       ''');
 
@@ -56,6 +91,7 @@ class DatabaseService {
       // Insert demo tasks
       final tasks = DemoData.generateTasks(5);
       for (var task in tasks) {
+        // Insert task
         await txn.insert('tasks', {
           'id': task.id,
           'title': task.title,
@@ -63,79 +99,13 @@ class DatabaseService {
           'created_by': task.createdBy,
           'created_at': task.createdAt.millisecondsSinceEpoch,
         });
+
+        // Insert comments for this task
+        final comments = DemoData.generateComments(task.id, 3);
+        for (var comment in comments) {
+          await txn.insert('comments', comment);
+        }
       }
     });
-  }
-
-  // Task CRUD Operations
-  Future<String> insertTask(TaskItem task) async {
-    final db = await database;
-    await db.insert('tasks', {
-      'id': task.id,
-      'title': task.title,
-      'description': task.description,
-      'created_by': task.createdBy,
-      'created_at': task.createdAt.millisecondsSinceEpoch,
-    });
-    return task.id;
-  }
-
-  Future<List<TaskItem>> getAllTasks() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks');
-
-    return List.generate(maps.length, (i) {
-      return TaskItem(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        description: maps[i]['description'],
-        createdBy: maps[i]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
-      );
-    });
-  }
-
-  Future<TaskItem?> getTask(String id) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (maps.isNotEmpty) {
-      return TaskItem(
-        id: maps[0]['id'],
-        title: maps[0]['title'],
-        description: maps[0]['description'],
-        createdBy: maps[0]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[0]['created_at']),
-      );
-    }
-    return null;
-  }
-
-  Future<int> updateTask(TaskItem task) async {
-    final db = await database;
-    return await db.update(
-      'tasks',
-      {
-        'title': task.title,
-        'description': task.description,
-        'created_by': task.createdBy,
-        'created_at': task.createdAt.millisecondsSinceEpoch,
-      },
-      where: 'id = ?',
-      whereArgs: [task.id],
-    );
-  }
-
-  Future<int> deleteTask(String id) async {
-    final db = await database;
-    return await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
   }
 }

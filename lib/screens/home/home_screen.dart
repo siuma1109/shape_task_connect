@@ -1,25 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
 import '../../models/task_item.dart';
-import '../../widgets/task/task_card.dart';
-import '../../utils/demo_data.dart';
+import '../../repositories/task_repository.dart';
+import '../../widgets/task/task_list.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.title, required this.authService});
+  const HomeScreen({
+    super.key,
+    required this.title,
+    required this.authService,
+  });
 
   final String title;
   final AuthService authService;
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  // Replace temporary mock data with demo data generator
-  final List<TaskItem> _todoItems = DemoData.generateTasks(5);
+class HomeScreenState extends State<HomeScreen> {
+  final _taskRepository = GetIt.instance<TaskRepository>();
+  List<TaskItem> _tasks = [];
+  bool _isLoading = false;
 
-  List<TaskItem> get _visibleTaskItems => _todoItems;
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final tasks = await _taskRepository.getAllTasks();
+      if (mounted) {
+        setState(() {
+          _tasks = tasks;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> refreshTasks() async {
+    await _loadTasks();
+  }
 
   Future<void> _logout() async {
     await widget.authService.logout();
@@ -38,6 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: refreshTasks,
+          ),
+          IconButton(
             icon: const Icon(CupertinoIcons.chat_bubble_2),
             onPressed: () {
               // TODO: Implement chat feature
@@ -49,13 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: _visibleTaskItems.length,
-        itemBuilder: (context, index) {
-          final todo = _visibleTaskItems[index];
-          return TaskCard(todo: todo);
-        },
+      body: TaskList(
+        tasks: _tasks,
+        isLoading: _isLoading,
+        onRefresh: refreshTasks,
       ),
     );
   }
