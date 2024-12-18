@@ -69,7 +69,8 @@ class DatabaseService {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           latitude REAL,
           longitude REAL,
-          address TEXT
+          address TEXT,
+          photo_path TEXT
         )
       ''');
 

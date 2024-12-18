@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import '../../models/comment.dart';
 import '../../repositories/comment_repository.dart';
 import '../../services/location_service.dart';
+import '../../services/photo_service.dart';
+import 'dart:io';
 
 class TaskComments extends StatefulWidget {
   final int taskId;
@@ -20,6 +22,7 @@ class _TaskCommentsState extends State<TaskComments> {
   final _commentRepository = GetIt.instance<CommentRepository>();
   final _commentController = TextEditingController();
   final _locationService = GetIt.instance<LocationService>();
+  final _photoService = GetIt.instance<PhotoService>();
   late Future<List<Comment>> _commentsFuture;
 
   @override
@@ -132,6 +135,78 @@ class _TaskCommentsState extends State<TaskComments> {
     }
   }
 
+  Future<void> _uploadPhoto({required bool fromCamera}) async {
+    final photoPath =
+        await _photoService.pickAndSavePhoto(fromCamera: fromCamera);
+    if (photoPath == null) return;
+
+    try {
+      final comment = Comment(
+        taskId: widget.taskId,
+        userId: 1,
+        content: '📷 Shared a photo',
+        createdAt: DateTime.now(),
+        photoPath: photoPath,
+      );
+
+      await _commentRepository.createComment(comment);
+      _loadComments();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Photo shared successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to share photo'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _uploadPhoto(fromCamera: false);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _uploadPhoto(fromCamera: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Share Location'),
+              onTap: () {
+                Navigator.pop(context);
+                _shareLocation();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -209,6 +284,16 @@ class _TaskCommentsState extends State<TaskComments> {
                                     color: Theme.of(context).primaryColor),
                               ),
                             ),
+                          if (comment.photoPath != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Image.file(
+                                File(comment.photoPath!),
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                         ],
                       ),
                       trailing: Text(_formatDate(comment.createdAt)),
@@ -235,7 +320,7 @@ class _TaskCommentsState extends State<TaskComments> {
             children: [
               IconButton(
                 icon: const Icon(Icons.attach_file),
-                onPressed: _shareLocation,
+                onPressed: _showAttachmentOptions,
               ),
               Expanded(
                 child: TextField(

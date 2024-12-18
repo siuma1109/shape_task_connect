@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../repositories/task_repository.dart';
 import '../repositories/comment_repository.dart';
 import 'location_service.dart';
+import 'photo_service.dart';
 
 final locator = GetIt.instance;
 
@@ -29,4 +30,7 @@ Future<void> setupLocator() async {
 
   // Register LocationService
   GetIt.instance.registerLazySingleton(() => LocationService());
+
+  // Register PhotoService
+  GetIt.instance.registerLazySingleton(() => PhotoService());
 }

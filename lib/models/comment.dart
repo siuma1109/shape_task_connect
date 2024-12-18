@@ -7,6 +7,7 @@ class Comment {
   final double? latitude;
   final double? longitude;
   final String? address;
+  final String? photoPath;
 
   Comment({
     this.id,
@@ -17,6 +18,7 @@ class Comment {
     this.latitude,
     this.longitude,
     this.address,
+    this.photoPath,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -28,6 +30,7 @@ class Comment {
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
+      'photo_path': photoPath,
     };
     if (id != null) map['id'] = id;
     return map;
@@ -43,6 +46,7 @@ class Comment {
       latitude: map['latitude'] as double?,
       longitude: map['longitude'] as double?,
       address: map['address'] as String?,
+      photoPath: map['photo_path'],
     );
   }
 }
