@@ -217,24 +217,6 @@ class _TaskCommentsState extends State<TaskComments> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Comments',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _refreshComments,
-              ),
-            ],
-          ),
-        ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _refreshComments,

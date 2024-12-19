@@ -4,7 +4,7 @@ import '../../models/task_item.dart';
 import 'task_header.dart';
 import 'task_content.dart';
 import 'task_actions.dart';
-import '../../screens/task/task_details_screen.dart';
+import '../../screens/task/task_comment_screen.dart';
 import '../../repositories/comment_repository.dart';
 
 class TaskCard extends StatefulWidget {
@@ -47,15 +47,11 @@ class _TaskCardState extends State<TaskCard> {
       elevation: 0,
       child: widget.isClickable && !widget.isInDetails
           ? InkWell(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final result = await TaskCommentScreen.show(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => TaskDetailsScreen(
-                      task: widget.task,
-                      onRefresh: widget.onRefresh,
-                    ),
-                  ),
+                  widget.task,
+                  onRefresh: widget.onRefresh,
                 );
               },
               child: AbsorbPointer(
@@ -80,26 +76,25 @@ class _TaskCardState extends State<TaskCard> {
                 task: widget.task,
                 onRefresh: widget.onRefresh,
                 isInDetails: widget.isInDetails),
-            if (!widget.isInDetails)
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: FutureBuilder<int>(
-                  future: _commentCountFuture,
-                  builder: (context, snapshot) {
-                    final count = snapshot.data ?? 0;
-                    return Row(
-                      children: [
-                        const Icon(Icons.comment_outlined, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          count.toString(),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    );
-                  },
-                ),
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: FutureBuilder<int>(
+                future: _commentCountFuture,
+                builder: (context, snapshot) {
+                  final count = snapshot.data ?? 0;
+                  return Row(
+                    children: [
+                      const Icon(Icons.comment_outlined, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        count.toString(),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  );
+                },
               ),
+            ),
           ],
         ),
       ],

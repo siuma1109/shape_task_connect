@@ -108,7 +108,7 @@ class _TaskActionsState extends State<TaskActions> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (!isOwner && widget.isInDetails == false)
+        if (!isOwner)
           IconButton(
             icon: _isLoading
                 ? const SizedBox(
@@ -120,12 +120,12 @@ class _TaskActionsState extends State<TaskActions> {
             onPressed: _toggleJoin,
             tooltip: _isJoined ? 'Leave task' : 'Join task',
           ),
-        if (isOwner && widget.isInDetails == false)
+        if (isOwner)
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _showEditDialog,
           ),
-        if (isOwner && widget.isInDetails == false)
+        if (isOwner)
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
