@@ -260,7 +260,7 @@ class TaskRepository {
     final taskCounts = <DateTime, int>{};
 
     for (final map in maps) {
-      final createdAt = DateTime.fromMillisecondsSinceEpoch(map['created_at']);
+      final createdAt = DateTime.parse(map['created_at']);
       final date = DateTime(createdAt.year, createdAt.month, createdAt.day);
       taskCounts[date] = (taskCounts[date] ?? 0) + 1;
     }

@@ -60,7 +60,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         setState(() {
           _taskCounts = counts;
-          print(_taskCounts);
+          print('taskCounts: $_taskCounts');
         });
       }
     } catch (e) {
