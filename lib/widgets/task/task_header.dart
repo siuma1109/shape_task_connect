@@ -3,9 +3,9 @@ import '../../models/task_item.dart';
 import '../../../utils/date_formatter.dart';
 
 class TaskHeader extends StatelessWidget {
-  final TaskItem todo;
+  final TaskItem task;
 
-  const TaskHeader({super.key, required this.todo});
+  const TaskHeader({super.key, required this.task});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class TaskHeader extends StatelessWidget {
             radius: 16,
             backgroundColor: Theme.of(context).primaryColor,
             child: Text(
-              todo.createdBy.toString(),
+              task.createdBy.toString(),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -30,13 +30,13 @@ class TaskHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'User ${todo.createdBy}',
+                  'User ${task.createdBy}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  DateFormatter.getTimeAgo(todo.createdAt),
+                  DateFormatter.getTimeAgo(task.createdAt ?? DateTime.now()),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
