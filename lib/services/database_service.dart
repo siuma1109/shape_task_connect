@@ -21,65 +21,71 @@ class DatabaseService {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Create tables
     await db.transaction((txn) async {
-      // Create users table
-      await txn.execute('''
-        CREATE TABLE users(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          email TEXT UNIQUE,
-          username TEXT,
-          password TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      ''');
+      // Create tables first
+      await _createTables(txn);
 
-      // Create tasks table
-      await txn.execute('''
-        CREATE TABLE tasks(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          title TEXT NOT NULL,
-          description TEXT NOT NULL,
-          created_by INTEGER NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (created_by) REFERENCES users (id)
-        )
-      ''');
-
-      // Create task_users table for users joining tasks
-      await txn.execute('''
-        CREATE TABLE task_users(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          task_id INTEGER NOT NULL,
-          user_id INTEGER NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
-          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-          UNIQUE(task_id, user_id)
-        )
-      ''');
-
-      // Create comments table
-      await txn.execute('''
-        CREATE TABLE comments(
-          id INTEGER PRIMARY KEY,
-          task_id INTEGER NOT NULL,
-          user_id INTEGER NOT NULL,
-          content TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          latitude REAL,
-          longitude REAL,
-          address TEXT,
-          photo_path TEXT
-        )
-      ''');
-
-      // Insert test user
-      await txn.insert('users', {
-        'email': 'test@example.com',
-        'username': 'testuser',
-        'password': 'password123',
-      });
+      // Generate demo data with custom quantities
+      await DemoData.generateData(
+        txn,
+        userCount: 5, // Generate 5 users
+        tasksPerUser: 3, // Each user creates 3 tasks
+        commentsPerTask: 2, // Each task has 2 comments
+        collaboratorsPerTask: 2, // Each task has 2 collaborators
+      );
     });
+  }
+
+  Future<void> _createTables(Transaction txn) async {
+    // Create users table
+    await txn.execute('''
+      CREATE TABLE users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        username TEXT,
+        password TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    ''');
+
+    // Create tasks table
+    await txn.execute('''
+      CREATE TABLE tasks(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        created_by INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users (id)
+      )
+    ''');
+
+    // Create task_users table for users joining tasks
+    await txn.execute('''
+      CREATE TABLE task_users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (task_id) REFERENCES tasks (id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+        UNIQUE(task_id, user_id)
+      )
+    ''');
+
+    // Create comments table
+    await txn.execute('''
+      CREATE TABLE comments(
+        id INTEGER PRIMARY KEY,
+        task_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        latitude REAL,
+        longitude REAL,
+        address TEXT,
+        photo_path TEXT
+      )
+    ''');
   }
 }

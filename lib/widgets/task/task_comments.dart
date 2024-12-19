@@ -6,6 +6,7 @@ import '../../services/location_service.dart';
 import '../../services/photo_service.dart';
 import '../../services/auth_service.dart';
 import 'dart:io';
+import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 
 class TaskComments extends StatefulWidget {
   final int taskId;
@@ -26,6 +27,7 @@ class _TaskCommentsState extends State<TaskComments> {
   final _photoService = GetIt.instance<PhotoService>();
   final _authService = GetIt.instance<AuthService>();
   late Future<List<Comment>> _commentsFuture;
+  final _imageLabeler = ImageLabeler(options: ImageLabelerOptions());
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _TaskCommentsState extends State<TaskComments> {
   @override
   void dispose() {
     _commentController.dispose();
+    _imageLabeler.close();
     super.dispose();
   }
 
@@ -145,11 +148,16 @@ class _TaskCommentsState extends State<TaskComments> {
     if (photoPath == null) return;
 
     try {
+      final inputImage = InputImage.fromFilePath(photoPath);
+      final labels = await _imageLabeler.processImage(inputImage);
+
+      final labelTexts = labels.take(3).map((label) => label.label).join(', ');
+
       final comment = Comment(
         taskId: widget.taskId,
         userId: _authService.currentUserDetails?.id ??
             0, // Use authenticated user ID
-        content: '📷 Shared a photo',
+        content: '📷 Shared a photo\n🏷️ Tags: $labelTexts',
         createdAt: DateTime.now(),
         photoPath: photoPath,
       );
