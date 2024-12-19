@@ -11,12 +11,14 @@ class TaskCard extends StatefulWidget {
   final TaskItem task;
   final bool isInDetails;
   final bool isClickable;
+  final Future<void> Function()? onRefresh;
 
   const TaskCard({
     super.key,
     required this.task,
     this.isInDetails = false,
     this.isClickable = true,
+    this.onRefresh,
   });
 
   @override
@@ -49,7 +51,10 @@ class _TaskCardState extends State<TaskCard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailsScreen(task: widget.task),
+                    builder: (context) => TaskDetailsScreen(
+                      task: widget.task,
+                      onRefresh: widget.onRefresh,
+                    ),
                   ),
                 );
               },
@@ -71,26 +76,30 @@ class _TaskCardState extends State<TaskCard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TaskActions(task: widget.task),
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: FutureBuilder<int>(
-                future: _commentCountFuture,
-                builder: (context, snapshot) {
-                  final count = snapshot.data ?? 0;
-                  return Row(
-                    children: [
-                      const Icon(Icons.comment_outlined, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        count.toString(),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  );
-                },
+            TaskActions(
+                task: widget.task,
+                onRefresh: widget.onRefresh,
+                isInDetails: widget.isInDetails),
+            if (!widget.isInDetails)
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: FutureBuilder<int>(
+                  future: _commentCountFuture,
+                  builder: (context, snapshot) {
+                    final count = snapshot.data ?? 0;
+                    return Row(
+                      children: [
+                        const Icon(Icons.comment_outlined, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          count.toString(),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ],

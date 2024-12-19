@@ -5,12 +5,12 @@ import '../../repositories/task_repository.dart';
 
 class EditTaskWidget extends StatefulWidget {
   final int taskId;
-  final Function() onTaskUpdated;
+  final Future<void> Function()? onRefresh;
 
   const EditTaskWidget({
     super.key,
     required this.taskId,
-    required this.onTaskUpdated,
+    required this.onRefresh,
   });
 
   @override
@@ -94,7 +94,8 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
             backgroundColor: Colors.green,
           ),
         );
-        widget.onTaskUpdated();
+        widget.onRefresh?.call();
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {

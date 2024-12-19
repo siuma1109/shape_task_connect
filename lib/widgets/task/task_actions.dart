@@ -7,10 +7,14 @@ import '../../repositories/task_repository.dart';
 
 class TaskActions extends StatefulWidget {
   final TaskItem task;
+  final Future<void> Function()? onRefresh;
+  final bool? isInDetails;
 
   const TaskActions({
     super.key,
     required this.task,
+    this.onRefresh,
+    this.isInDetails = false,
   });
 
   @override
@@ -90,12 +94,7 @@ class _TaskActionsState extends State<TaskActions> {
       context: context,
       builder: (context) => EditTaskWidget(
         taskId: widget.task.id!,
-        onTaskUpdated: () {
-          // Close the dialog
-          Navigator.of(context).pop();
-          // Force a rebuild of the parent widgets
-          setState(() {});
-        },
+        onRefresh: widget.onRefresh,
       ),
     );
   }
@@ -109,7 +108,7 @@ class _TaskActionsState extends State<TaskActions> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (!isOwner)
+        if (!isOwner && widget.isInDetails == false)
           IconButton(
             icon: _isLoading
                 ? const SizedBox(
@@ -121,12 +120,12 @@ class _TaskActionsState extends State<TaskActions> {
             onPressed: _toggleJoin,
             tooltip: _isJoined ? 'Leave task' : 'Join task',
           ),
-        if (isOwner)
+        if (isOwner && widget.isInDetails == false)
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _showEditDialog,
           ),
-        if (isOwner)
+        if (isOwner && widget.isInDetails == false)
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
@@ -152,6 +151,7 @@ class _TaskActionsState extends State<TaskActions> {
               if (confirmed == true) {
                 final taskRepo = GetIt.instance<TaskRepository>();
                 await taskRepo.deleteTask(widget.task.id!);
+                widget.onRefresh?.call();
               }
             },
           ),

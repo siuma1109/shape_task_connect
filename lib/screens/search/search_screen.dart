@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/task_item.dart';
 import '../../models/user.dart';
-import '../../widgets/task/task_card.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../widgets/user/user_details.dart';

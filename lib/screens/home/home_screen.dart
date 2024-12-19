@@ -57,13 +57,6 @@ class HomeScreenState extends State<HomeScreen> {
     await _loadTasks();
   }
 
-  Future<void> _logout() async {
-    await widget.authService.logout();
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,11 +69,7 @@ class HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: refreshTasks,
-          ),
-          IconButton(
-            icon: const Icon(CupertinoIcons.square_arrow_right),
-            onPressed: _logout,
-          ),
+          )
         ],
       ),
       body: TaskList(
