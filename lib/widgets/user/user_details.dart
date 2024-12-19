@@ -4,13 +4,16 @@ import '../../models/task_item.dart';
 import '../../repositories/task_repository.dart';
 import '../../widgets/task/task_card.dart';
 import 'package:get_it/get_it.dart';
+import '../../services/auth_service.dart';
 
 class UserDetails extends StatefulWidget {
   final User user;
+  final bool showLogout;
 
   const UserDetails({
     super.key,
     required this.user,
+    this.showLogout = false,
   });
 
   @override
@@ -50,6 +53,21 @@ class _UserDetailsState extends State<UserDetails> {
             icon: const Icon(Icons.refresh),
             onPressed: _refreshTasks,
           ),
+          if (widget.showLogout)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                final authService = GetIt.instance<AuthService>();
+                await authService.logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/login',
+                    (route) => false,
+                  );
+                }
+              },
+              tooltip: 'Logout',
+            ),
         ],
       ),
       body: RefreshIndicator(

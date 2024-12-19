@@ -20,14 +20,44 @@ class CommentRepository {
   // Read
   Future<List<Comment>> getCommentsByTask(int taskId) async {
     final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'comments',
-      where: 'task_id = ?',
-      whereArgs: [taskId],
-      orderBy: 'created_at DESC',
-    );
 
-    return List.generate(maps.length, (i) => Comment.fromMap(maps[i]));
+    // Join comments with users table to get user data
+    final List<Map<String, dynamic>> results = await db.rawQuery('''
+      SELECT 
+        c.*,
+        u.id as user_id,
+        u.username as user_name,
+        u.email as user_email
+      FROM comments c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE c.task_id = ?
+      ORDER BY c.created_at DESC
+    ''', [taskId]);
+
+    return results.map((result) {
+      // Create a user map from the joined data
+      final userMap = {
+        'id': result['user_id'],
+        'username': result['user_name'],
+        'email': result['user_email'],
+      };
+
+      // Create the comment map
+      final commentMap = {
+        'id': result['id'],
+        'task_id': result['task_id'],
+        'user_id': result['user_id'],
+        'content': result['content'],
+        'created_at': result['created_at'],
+        'latitude': result['latitude'],
+        'longitude': result['longitude'],
+        'address': result['address'],
+        'photo_path': result['photo_path'],
+        'user': userMap,
+      };
+
+      return Comment.fromMap(commentMap);
+    }).toList();
   }
 
   Future<List<Comment>> getCommentsByUser(int userId) async {

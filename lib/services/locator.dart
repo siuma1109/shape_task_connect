@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'auth_service.dart';
 import 'database_service.dart';
 import '../repositories/user_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +7,7 @@ import '../repositories/comment_repository.dart';
 import 'location_service.dart';
 import 'photo_service.dart';
 import 'public_holiday_service.dart';
+import 'auth_service.dart';
 
 final locator = GetIt.instance;
 
@@ -23,9 +23,7 @@ Future<void> setupLocator() async {
       .registerLazySingleton(() => UserRepository(locator<DatabaseService>()));
   locator
       .registerLazySingleton(() => TaskRepository(locator<DatabaseService>()));
-  locator.registerLazySingleton(
-    () => AuthService(locator<UserRepository>(), locator<SharedPreferences>()),
-  );
+
   locator.registerLazySingleton(
       () => CommentRepository(locator<DatabaseService>()));
 
@@ -37,4 +35,8 @@ Future<void> setupLocator() async {
 
   // Register PublicHolidayService
   locator.registerLazySingleton(() => PublicHolidayService());
+
+  // Register AuthService
+  GetIt.instance.registerSingleton<AuthService>(
+      AuthService(locator<UserRepository>(), locator<SharedPreferences>()));
 }

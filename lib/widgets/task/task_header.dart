@@ -30,7 +30,7 @@ class TaskHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'User ${task.createdBy}',
+                  task.user?.username ?? 'User id: ${task.createdBy}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),

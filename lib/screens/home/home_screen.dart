@@ -78,12 +78,6 @@ class HomeScreenState extends State<HomeScreen> {
             onPressed: refreshTasks,
           ),
           IconButton(
-            icon: const Icon(CupertinoIcons.chat_bubble_2),
-            onPressed: () {
-              // TODO: Implement chat feature
-            },
-          ),
-          IconButton(
             icon: const Icon(CupertinoIcons.square_arrow_right),
             onPressed: _logout,
           ),

@@ -31,7 +31,7 @@ class PublicHoliday {
 
   Map<String, dynamic> toJson() {
     return {
-      'date': date.toIso8601String(),
+      'date': date.toString(),
       'localName': localName,
       'name': name,
       'countryCode': countryCode,

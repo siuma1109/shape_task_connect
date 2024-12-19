@@ -1,3 +1,4 @@
+import 'package:shape_task_connect/models/user.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/task_item.dart';
 import '../services/database_service.dart';
@@ -24,7 +25,6 @@ class TaskRepository {
         {
           'task_id': taskId,
           'user_id': userId,
-          'created_at': DateTime.now().toIso8601String(),
         },
         conflictAlgorithm: ConflictAlgorithm.abort,
       );
@@ -43,11 +43,38 @@ class TaskRepository {
   // Read
   Future<List<TaskItem>> getAllTasks() async {
     final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      orderBy: 'created_at DESC',
-    );
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        u.id as user_id,
+        u.username as user_name,
+        u.email as user_email
+      FROM tasks t
+      LEFT JOIN users u ON t.created_by = u.id
+      ORDER BY t.created_at DESC
+    ''');
+
+    return maps.map((map) {
+      // Create a user map from the joined data
+      final userMap = {
+        'id': map['user_id'],
+        'username': map['user_name'],
+        'email': map['user_email'],
+      };
+
+      // Create the comment map
+      final taskMap = {
+        'id': map['id'],
+        'title': map['title'],
+        'description': map['description'],
+        'created_by': map['created_by'],
+        'created_at': map['created_at'],
+        'user': userMap,
+      };
+
+      return TaskItem.fromMap(taskMap);
+    }).toList();
   }
 
   Future<TaskItem?> getTask(int id) async {
@@ -78,7 +105,7 @@ class TaskRepository {
   }
 
   // Delete
-  Future<int> deleteTask(String id) async {
+  Future<int> deleteTask(int id) async {
     final db = await _databaseService.database;
     return await db.delete(
       'tasks',
@@ -100,17 +127,47 @@ class TaskRepository {
     return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
-  // Get tasks by user ID
+  // Get tasks by user ID (both created and joined tasks)
   Future<List<TaskItem>> getTasksByUser(int userId) async {
     final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'created_by = ?',
-      whereArgs: [userId],
-      orderBy: 'created_at DESC',
-    );
 
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        u.id as user_id,
+        u.username as user_name,
+        u.email as user_email
+      FROM tasks t
+      LEFT JOIN users u ON t.created_by = u.id
+      WHERE t.created_by = ?
+        OR t.id IN (
+          SELECT task_id 
+          FROM task_users 
+          WHERE user_id = ?
+        )
+      ORDER BY t.created_at DESC
+    ''', [userId, userId]);
+
+    return maps.map((map) {
+      // Create a user map from the joined data
+      final userMap = {
+        'id': map['user_id'],
+        'username': map['user_name'],
+        'email': map['user_email'],
+      };
+
+      // Create the task map
+      final taskMap = {
+        'id': map['id'],
+        'title': map['title'],
+        'description': map['description'],
+        'created_by': map['created_by'],
+        'created_at': map['created_at'],
+        'user': userMap,
+      };
+
+      return TaskItem.fromMap(taskMap);
+    }).toList();
   }
 
   Future<bool> isUserJoined(int taskId, int userId) async {
@@ -141,14 +198,44 @@ class TaskRepository {
       int? userId, DateTime startDate, DateTime endDate) async {
     final Database db = await _databaseService.database;
 
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'created_by = ? AND created_at BETWEEN ? AND ?',
-      whereArgs: [userId, startDate.toString(), endDate.toString()],
-      orderBy: 'created_at DESC',
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        u.id as user_id,
+        u.username as user_name,
+        u.email as user_email
+      FROM tasks t
+      LEFT JOIN users u ON t.created_by = u.id
+      WHERE (t.created_by = ? 
+        OR t.id IN (
+          SELECT task_id 
+          FROM task_users 
+          WHERE user_id = ?
+        ))
+      AND t.created_at BETWEEN ? AND ?
+      ORDER BY t.created_at DESC
+    ''', [userId, userId, startDate.toString(), endDate.toString()]);
 
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+    return maps.map((map) {
+      // Create a user map from the joined data
+      final userMap = {
+        'id': map['user_id'],
+        'username': map['user_name'],
+        'email': map['user_email'],
+      };
+
+      // Create the task map
+      final taskMap = {
+        'id': map['id'],
+        'title': map['title'],
+        'description': map['description'],
+        'created_by': map['created_by'],
+        'created_at': map['created_at'],
+        'user': userMap,
+      };
+
+      return TaskItem.fromMap(taskMap);
+    }).toList();
   }
 
   Future<Map<DateTime, int>> getTaskCountsByDateRange(
@@ -158,11 +245,17 @@ class TaskRepository {
   ) async {
     final Database db = await _databaseService.database;
 
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'created_by = ? AND created_at BETWEEN ? AND ?',
-      whereArgs: [userId, startDate.toString(), endDate.toString()],
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT t.* 
+      FROM tasks t
+      WHERE (t.created_by = ? 
+        OR t.id IN (
+          SELECT task_id 
+          FROM task_users 
+          WHERE user_id = ?
+        ))
+      AND t.created_at BETWEEN ? AND ?
+    ''', [userId, userId, startDate.toString(), endDate.toString()]);
 
     final taskCounts = <DateTime, int>{};
 

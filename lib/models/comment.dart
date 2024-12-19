@@ -1,3 +1,5 @@
+import '../models/user.dart';
+
 class Comment {
   final int? id;
   final int taskId;
@@ -8,6 +10,7 @@ class Comment {
   final double? longitude;
   final String? address;
   final String? photoPath;
+  final User? user;
 
   Comment({
     this.id,
@@ -19,10 +22,12 @@ class Comment {
     this.longitude,
     this.address,
     this.photoPath,
+    this.user,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
-    final map = {
+    return {
+      'id': id,
       'task_id': taskId,
       'user_id': userId,
       'content': content,
@@ -32,21 +37,20 @@ class Comment {
       'address': address,
       'photo_path': photoPath,
     };
-    if (id != null) map['id'] = id;
-    return map;
   }
 
   factory Comment.fromMap(Map<String, dynamic> map) {
     return Comment(
-      id: map['id'] as int?,
-      taskId: map['task_id'] as int,
-      userId: map['user_id'] as int,
-      content: map['content'] as String,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      latitude: map['latitude'] as double?,
-      longitude: map['longitude'] as double?,
-      address: map['address'] as String?,
+      id: map['id'],
+      taskId: map['task_id'],
+      userId: map['user_id'],
+      content: map['content'],
+      createdAt: DateTime.parse(map['created_at']),
+      latitude: map['latitude'],
+      longitude: map['longitude'],
+      address: map['address'],
       photoPath: map['photo_path'],
+      user: map['user'] != null ? User.fromMap(map['user']) : null,
     );
   }
 }

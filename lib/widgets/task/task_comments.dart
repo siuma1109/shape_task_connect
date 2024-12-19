@@ -4,6 +4,7 @@ import '../../models/comment.dart';
 import '../../repositories/comment_repository.dart';
 import '../../services/location_service.dart';
 import '../../services/photo_service.dart';
+import '../../services/auth_service.dart';
 import 'dart:io';
 
 class TaskComments extends StatefulWidget {
@@ -23,6 +24,7 @@ class _TaskCommentsState extends State<TaskComments> {
   final _commentController = TextEditingController();
   final _locationService = GetIt.instance<LocationService>();
   final _photoService = GetIt.instance<PhotoService>();
+  final _authService = GetIt.instance<AuthService>();
   late Future<List<Comment>> _commentsFuture;
 
   @override
@@ -59,7 +61,8 @@ class _TaskCommentsState extends State<TaskComments> {
 
       final comment = Comment(
         taskId: widget.taskId,
-        userId: 1, // Using test user for now
+        userId: _authService.currentUserDetails?.id ??
+            0, // Use authenticated user ID
         content: content,
         createdAt: DateTime.now(),
       );
@@ -106,7 +109,8 @@ class _TaskCommentsState extends State<TaskComments> {
     try {
       final comment = Comment(
         taskId: widget.taskId,
-        userId: 1, // TODO: Get actual user ID
+        userId: _authService.currentUserDetails?.id ??
+            0, // Use authenticated user ID
         content: '📍 Shared a location',
         createdAt: DateTime.now(),
         latitude: locationData['latitude'],
@@ -143,7 +147,8 @@ class _TaskCommentsState extends State<TaskComments> {
     try {
       final comment = Comment(
         taskId: widget.taskId,
-        userId: 1,
+        userId: _authService.currentUserDetails?.id ??
+            0, // Use authenticated user ID
         content: '📷 Shared a photo',
         createdAt: DateTime.now(),
         photoPath: photoPath,
@@ -267,7 +272,8 @@ class _TaskCommentsState extends State<TaskComments> {
                   itemBuilder: (context, index) {
                     final comment = comments[index];
                     return ListTile(
-                      title: Text('User ${comment.userId}'),
+                      title: Text(comment.user?.username ??
+                          'User id: ${comment.userId}'),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
