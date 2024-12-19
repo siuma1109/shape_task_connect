@@ -94,6 +94,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             _focusedDay.year, _focusedDay.month, _focusedDay.day, 23, 59, 59);
         final tasks = await _taskRepository.getTasksByUserAndCreatedAtRange(
             currentUser.id, startOfDay, endOfDay);
+        print('Values: ${currentUser.id} $startOfDay $endOfDay');
+        print('Tasks: ${tasks.length}');
         setState(() {
           _tasks = tasks;
         });

@@ -144,23 +144,11 @@ class TaskRepository {
     final List<Map<String, dynamic>> maps = await db.query(
       'tasks',
       where: 'created_by = ? AND created_at BETWEEN ? AND ?',
-      whereArgs: [
-        userId,
-        startDate.millisecondsSinceEpoch,
-        endDate.millisecondsSinceEpoch
-      ],
+      whereArgs: [userId, startDate.toString(), endDate.toString()],
       orderBy: 'created_at DESC',
     );
 
-    return List.generate(maps.length, (i) {
-      return TaskItem(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        description: maps[i]['description'],
-        createdBy: maps[i]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
-      );
-    });
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
   Future<Map<DateTime, int>> getTaskCountsByDateRange(
@@ -173,11 +161,7 @@ class TaskRepository {
     final List<Map<String, dynamic>> maps = await db.query(
       'tasks',
       where: 'created_by = ? AND created_at BETWEEN ? AND ?',
-      whereArgs: [
-        userId,
-        startDate.millisecondsSinceEpoch,
-        endDate.millisecondsSinceEpoch
-      ],
+      whereArgs: [userId, startDate.toString(), endDate.toString()],
     );
 
     final taskCounts = <DateTime, int>{};
