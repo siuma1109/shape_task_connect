@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/task_item.dart';
 import '../../repositories/task_repository.dart';
+import '../../services/auth_service.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
@@ -16,6 +19,7 @@ class _AddScreenState extends State<AddScreen> {
   final _descriptionController = TextEditingController();
   final _taskRepository = GetIt.instance<TaskRepository>();
   bool _isLoading = false;
+  final authService = GetIt.instance<AuthService>();
 
   @override
   void dispose() {
@@ -32,11 +36,10 @@ class _AddScreenState extends State<AddScreen> {
 
       try {
         final task = TaskItem(
-          id: DateTime.now().millisecondsSinceEpoch,
           title: _titleController.text,
           description: _descriptionController.text,
-          createdBy: 1, // Using test user ID
-          createdAt: DateTime.now(),
+          createdBy:
+              authService.currentUserDetails?.id ?? 0, // Using test user ID
         );
 
         await _taskRepository.createTask(task);

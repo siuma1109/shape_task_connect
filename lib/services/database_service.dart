@@ -37,7 +37,7 @@ class DatabaseService {
       // Create tasks table
       await txn.execute('''
         CREATE TABLE tasks(
-          id INTEGER PRIMARY KEY,
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           description TEXT NOT NULL,
           created_by INTEGER NOT NULL,
@@ -80,25 +80,6 @@ class DatabaseService {
         'username': 'testuser',
         'password': 'password123',
       });
-
-      // Insert demo tasks
-      final tasks = DemoData.generateTasks(5);
-      for (var task in tasks) {
-        // Insert task
-        await txn.insert('tasks', {
-          'id': task.id,
-          'title': task.title,
-          'description': task.description,
-          'created_by': task.createdBy,
-          'created_at': task.createdAt.millisecondsSinceEpoch,
-        });
-
-        // Insert comments for this task
-        final comments = DemoData.generateComments(task.id, 3);
-        for (var comment in comments) {
-          await txn.insert('comments', comment);
-        }
-      }
     });
   }
 }

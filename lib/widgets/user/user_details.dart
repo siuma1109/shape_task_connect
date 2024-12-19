@@ -147,7 +147,7 @@ class _UserDetailsState extends State<UserDetails> {
                     padding: const EdgeInsets.all(16),
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
-                      return TaskCard(todo: tasks[index]);
+                      return TaskCard(task: tasks[index]);
                     },
                   );
                 },

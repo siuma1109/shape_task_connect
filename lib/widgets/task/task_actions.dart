@@ -29,7 +29,8 @@ class _TaskActionsState extends State<TaskActions> {
   Future<void> _checkJoinStatus() async {
     // TODO: Get actual user ID
     const userId = 1;
-    final isJoined = await _taskRepository.isUserJoined(widget.task.id, userId);
+    final isJoined =
+        await _taskRepository.isUserJoined(widget.task.id ?? 0, userId);
     if (mounted) {
       setState(() {
         _isJoined = isJoined;
@@ -49,9 +50,9 @@ class _TaskActionsState extends State<TaskActions> {
       const userId = 1;
 
       if (_isJoined) {
-        await _taskRepository.leaveTask(widget.task.id, userId);
+        await _taskRepository.leaveTask(widget.task.id ?? 0, userId);
       } else {
-        await _taskRepository.joinTask(widget.task.id, userId);
+        await _taskRepository.joinTask(widget.task.id ?? 0, userId);
       }
 
       if (mounted) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/task_item.dart';
 import 'task_header.dart';
@@ -9,13 +8,13 @@ import '../../screens/task/task_details_screen.dart';
 import '../../repositories/comment_repository.dart';
 
 class TaskCard extends StatefulWidget {
-  final TaskItem todo;
+  final TaskItem task;
   final bool isInDetails;
   final bool isClickable;
 
   const TaskCard({
     super.key,
-    required this.todo,
+    required this.task,
     this.isInDetails = false,
     this.isClickable = true,
   });
@@ -35,7 +34,8 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   void _loadCommentCount() {
-    _commentCountFuture = _commentRepository.countTaskComments(widget.todo.id);
+    _commentCountFuture =
+        _commentRepository.countTaskComments(widget.task.id ?? 0);
   }
 
   @override
@@ -49,7 +49,7 @@ class _TaskCardState extends State<TaskCard> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailsScreen(task: widget.todo),
+                    builder: (context) => TaskDetailsScreen(task: widget.task),
                   ),
                 );
               },
@@ -66,12 +66,12 @@ class _TaskCardState extends State<TaskCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TaskHeader(todo: widget.todo),
-        TaskContent(todo: widget.todo),
+        TaskHeader(task: widget.task),
+        TaskContent(task: widget.task),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TaskActions(task: widget.todo),
+            TaskActions(task: widget.task),
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: FutureBuilder<int>(

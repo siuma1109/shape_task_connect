@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../models/task_item.dart';
 
 class TaskContent extends StatelessWidget {
-  final TaskItem todo;
+  final TaskItem task;
 
-  const TaskContent({super.key, required this.todo});
+  const TaskContent({super.key, required this.task});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class TaskContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            todo.title,
+            task.title,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -31,7 +31,7 @@ class TaskContent extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            todo.description,
+            task.description,
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black87,

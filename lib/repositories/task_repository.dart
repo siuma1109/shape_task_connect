@@ -47,16 +47,7 @@ class TaskRepository {
       'tasks',
       orderBy: 'created_at DESC',
     );
-
-    return List.generate(maps.length, (i) {
-      return TaskItem(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        description: maps[i]['description'],
-        createdBy: maps[i]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
-      );
-    });
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
   Future<TaskItem?> getTask(int id) async {
@@ -79,7 +70,7 @@ class TaskRepository {
         'title': task.title,
         'description': task.description,
         'created_by': task.createdBy,
-        'created_at': task.createdAt.millisecondsSinceEpoch,
+        'created_at': task.createdAt?.millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [task.id],
@@ -106,15 +97,7 @@ class TaskRepository {
       orderBy: 'created_at DESC',
     );
 
-    return List.generate(maps.length, (i) {
-      return TaskItem(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        description: maps[i]['description'],
-        createdBy: maps[i]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
-      );
-    });
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
   // Get tasks by user ID
@@ -127,15 +110,7 @@ class TaskRepository {
       orderBy: 'created_at DESC',
     );
 
-    return List.generate(maps.length, (i) {
-      return TaskItem(
-        id: maps[i]['id'],
-        title: maps[i]['title'],
-        description: maps[i]['description'],
-        createdBy: maps[i]['created_by'],
-        createdAt: DateTime.fromMillisecondsSinceEpoch(maps[i]['created_at']),
-      );
-    });
+    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
   }
 
   Future<bool> isUserJoined(int taskId, int userId) async {

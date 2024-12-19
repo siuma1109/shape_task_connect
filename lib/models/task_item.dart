@@ -1,24 +1,23 @@
 class TaskItem {
-  final int id;
+  final int? id;
   final String title;
   final String description;
   final int createdBy;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   TaskItem({
-    required this.id,
+    this.id,
     required this.title,
     required this.description,
     required this.createdBy,
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.createdAt,
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'title': title,
       'description': description,
       'created_by': createdBy,
-      'created_at': createdAt.toIso8601String(),
     };
   }
 

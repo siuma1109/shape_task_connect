@@ -24,12 +24,12 @@ class TaskDetailsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TaskCard(
-            todo: task,
+            task: task,
             isInDetails: true,
             isClickable: false,
           ),
           Expanded(
-            child: TaskComments(taskId: task.id),
+            child: TaskComments(taskId: task.id ?? 0),
           ),
         ],
       ),
