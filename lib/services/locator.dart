@@ -7,6 +7,7 @@ import '../repositories/task_repository.dart';
 import '../repositories/comment_repository.dart';
 import 'location_service.dart';
 import 'photo_service.dart';
+import 'public_holiday_service.dart';
 
 final locator = GetIt.instance;
 
@@ -33,4 +34,7 @@ Future<void> setupLocator() async {
 
   // Register PhotoService
   GetIt.instance.registerLazySingleton(() => PhotoService());
+
+  // Register PublicHolidayService
+  locator.registerLazySingleton(() => PublicHolidayService());
 }
