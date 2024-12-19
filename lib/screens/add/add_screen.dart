@@ -21,11 +21,28 @@ class _AddScreenState extends State<AddScreen> {
   bool _isLoading = false;
   final authService = GetIt.instance<AuthService>();
 
+  DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+  bool _isCompleted = false;
+
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDueDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDueDate) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
+    }
   }
 
   Future<void> _submitForm() async {
@@ -38,8 +55,9 @@ class _AddScreenState extends State<AddScreen> {
         final task = TaskItem(
           title: _titleController.text,
           description: _descriptionController.text,
-          createdBy:
-              authService.currentUserDetails?.id ?? 0, // Using test user ID
+          createdBy: authService.currentUserDetails?.id ?? 0,
+          dueDate: _selectedDueDate,
+          completed: _isCompleted,
         );
 
         await _taskRepository.createTask(task);
@@ -54,6 +72,10 @@ class _AddScreenState extends State<AddScreen> {
           // Clear form
           _titleController.clear();
           _descriptionController.clear();
+          setState(() {
+            _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+            _isCompleted = false;
+          });
         }
       } catch (e) {
         if (mounted) {
@@ -136,6 +158,35 @@ class _AddScreenState extends State<AddScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('Due Date'),
+                subtitle: Text(
+                  '${_selectedDueDate.year}-${_selectedDueDate.month}-${_selectedDueDate.day}',
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: _selectDueDate,
+                tileColor: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Mark as Completed'),
+                value: _isCompleted,
+                onChanged: (bool value) {
+                  setState(() {
+                    _isCompleted = value;
+                  });
+                },
+                tileColor: Theme.of(context).cardColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                ),
               ),
             ],
           ),

@@ -37,19 +37,36 @@ class SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final tasks = await _taskRepository.getAllTasks();
-      if (mounted) {
-        setState(() {
-          _allTasks = tasks;
-          _filteredTasks = List.from(_allTasks);
-          _isLoading = false;
-        });
+      if (_isSearchingTasks && _searchController.text.isNotEmpty) {
+        final searchResults =
+            await _taskRepository.searchTasks(_searchController.text);
+        if (mounted) {
+          setState(() {
+            _filteredTasks = searchResults;
+            _isLoading = false;
+          });
+        }
+      } else {
+        final tasks = await _taskRepository.getAllTasks();
+        if (mounted) {
+          setState(() {
+            _allTasks = tasks;
+            _filteredTasks = List.from(_allTasks);
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error refreshing tasks. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }

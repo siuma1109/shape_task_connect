@@ -56,6 +56,8 @@ class DatabaseService {
         description TEXT NOT NULL,
         created_by INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        due_date DATETIME NOT NULL,
+        completed INTEGER DEFAULT 0,
         FOREIGN KEY (created_by) REFERENCES users (id)
       )
     ''');

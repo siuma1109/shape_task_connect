@@ -69,6 +69,44 @@ class _TaskCardState extends State<TaskCard> {
       children: [
         TaskHeader(task: widget.task),
         TaskContent(task: widget.task),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
+          child: Row(
+            children: [
+              Icon(
+                Icons.event,
+                size: 20,
+                color: widget.task.dueDate.isBefore(DateTime.now())
+                    ? Colors.red
+                    : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${widget.task.dueDate.year}-${widget.task.dueDate.month}-${widget.task.dueDate.day}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: widget.task.dueDate.isBefore(DateTime.now())
+                          ? Colors.red
+                          : null,
+                    ),
+              ),
+              const SizedBox(width: 24),
+              Icon(
+                widget.task.completed
+                    ? Icons.check_circle
+                    : Icons.check_circle_outline,
+                size: 20,
+                color: widget.task.completed ? Colors.green : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.task.completed ? 'Completed' : 'Pending',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: widget.task.completed ? Colors.green : null,
+                    ),
+              ),
+            ],
+          ),
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

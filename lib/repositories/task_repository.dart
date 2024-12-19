@@ -68,6 +68,8 @@ class TaskRepository {
         'id': map['id'],
         'title': map['title'],
         'description': map['description'],
+        'due_date': map['due_date'],
+        'completed': map['completed'],
         'created_by': map['created_by'],
         'created_at': map['created_at'],
         'user': userMap,
@@ -96,6 +98,8 @@ class TaskRepository {
       {
         'title': task.title,
         'description': task.description,
+        'due_date': task.dueDate.toString(),
+        'completed': task.completed ? 1 : 0,
       },
       where: 'id = ?',
       whereArgs: [task.id],
@@ -161,6 +165,8 @@ class TaskRepository {
         'description': map['description'],
         'created_by': map['created_by'],
         'created_at': map['created_at'],
+        'due_date': map['due_date'],
+        'completed': map['completed'],
         'user': userMap,
       };
 
@@ -192,7 +198,7 @@ class TaskRepository {
     }
   }
 
-  Future<List<TaskItem>> getTasksByUserAndCreatedAtRange(
+  Future<List<TaskItem>> getTasksByUserAndDueDateRange(
       int? userId, DateTime startDate, DateTime endDate) async {
     final Database db = await _databaseService.database;
 
@@ -210,8 +216,8 @@ class TaskRepository {
           FROM task_users 
           WHERE user_id = ?
         ))
-      AND t.created_at BETWEEN ? AND ?
-      ORDER BY t.created_at DESC
+      AND t.due_date BETWEEN ? AND ?
+      ORDER BY t.due_date DESC
     ''', [userId, userId, startDate.toString(), endDate.toString()]);
 
     return maps.map((map) {
@@ -229,6 +235,8 @@ class TaskRepository {
         'description': map['description'],
         'created_by': map['created_by'],
         'created_at': map['created_at'],
+        'due_date': map['due_date'],
+        'completed': map['completed'],
         'user': userMap,
       };
 
@@ -252,14 +260,14 @@ class TaskRepository {
           FROM task_users 
           WHERE user_id = ?
         ))
-      AND t.created_at BETWEEN ? AND ?
+      AND t.due_date BETWEEN ? AND ?
     ''', [userId, userId, startDate.toString(), endDate.toString()]);
 
     final taskCounts = <DateTime, int>{};
 
     for (final map in maps) {
-      final createdAt = DateTime.parse(map['created_at']);
-      final date = DateTime(createdAt.year, createdAt.month, createdAt.day);
+      final dueDate = DateTime.parse(map['due_date']);
+      final date = DateTime(dueDate.year, dueDate.month, dueDate.day);
       taskCounts[date] = (taskCounts[date] ?? 0) + 1;
     }
 

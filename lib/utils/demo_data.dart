@@ -24,11 +24,15 @@ class DemoData {
     // Generate tasks for each user
     for (int userId in userIds) {
       for (int i = 1; i <= tasksPerUser; i++) {
-        // Create task
+        // Create task with due date and completed status
         final taskId = await txn.insert('tasks', {
           'title': 'Task $i by User $userId',
           'description': 'This is task number $i created by user $userId',
           'created_by': userId,
+          'due_date': DateTime.now()
+              .add(Duration(days: i + 7))
+              .toString(), // Due in 7+ days
+          'completed': i % 3 == 0 ? 1 : 0, // Every third task is completed
         });
 
         // Add creator as task participant

@@ -23,10 +23,14 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
   final _descriptionController = TextEditingController();
   bool _isLoading = true;
   TaskItem? _task;
+  late DateTime _selectedDueDate;
+  late bool _isCompleted;
 
   @override
   void initState() {
     super.initState();
+    _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+    _isCompleted = false;
     _loadTask();
   }
 
@@ -45,6 +49,8 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
           _task = task;
           _titleController.text = task.title;
           _descriptionController.text = task.description;
+          _selectedDueDate = task.dueDate;
+          _isCompleted = task.completed;
           _isLoading = false;
         });
       }
@@ -57,6 +63,20 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _selectDueDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDueDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDueDate) {
+      setState(() {
+        _selectedDueDate = picked;
+      });
     }
   }
 
@@ -83,6 +103,8 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
         description: description,
         createdBy: _task!.createdBy,
         createdAt: _task!.createdAt,
+        dueDate: _selectedDueDate,
+        completed: _isCompleted,
       );
 
       await _taskRepository.updateTask(updatedTask);
@@ -145,6 +167,35 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
                     ),
                     maxLines: null,
                     minLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: const Text('Due Date'),
+                    subtitle: Text(
+                      '${_selectedDueDate.year}-${_selectedDueDate.month}-${_selectedDueDate.day}',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: _selectDueDate,
+                    tileColor: Theme.of(context).cardColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: const Text('Mark as Completed'),
+                    value: _isCompleted,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _isCompleted = value;
+                      });
+                    },
+                    tileColor: Theme.of(context).cardColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
                   ),
                 ],
               ),
