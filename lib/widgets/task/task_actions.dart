@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shape_task_connect/services/auth_service.dart';
+import 'package:shape_task_connect/widgets/task/edit_task_widget.dart';
 import '../../models/task_item.dart';
 import '../../repositories/task_repository.dart';
 
@@ -84,6 +85,21 @@ class _TaskActionsState extends State<TaskActions> {
     }
   }
 
+  void _showEditDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => EditTaskWidget(
+        taskId: widget.task.id!,
+        onTaskUpdated: () {
+          // Close the dialog
+          Navigator.of(context).pop();
+          // Force a rebuild of the parent widgets
+          setState(() {});
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = GetIt.instance<AuthService>();
@@ -93,7 +109,6 @@ class _TaskActionsState extends State<TaskActions> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Only show join/leave button if user is not the owner
         if (!isOwner)
           IconButton(
             icon: _isLoading
@@ -109,13 +124,7 @@ class _TaskActionsState extends State<TaskActions> {
         if (isOwner)
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/edit-task',
-                arguments: widget.task,
-              );
-            },
+            onPressed: _showEditDialog,
           ),
         if (isOwner)
           IconButton(

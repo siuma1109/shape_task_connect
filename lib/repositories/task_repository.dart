@@ -96,8 +96,6 @@ class TaskRepository {
       {
         'title': task.title,
         'description': task.description,
-        'created_by': task.createdBy,
-        'created_at': task.createdAt?.millisecondsSinceEpoch,
       },
       where: 'id = ?',
       whereArgs: [task.id],
