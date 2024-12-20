@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/task_item.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 import '../../services/auth_service.dart';
 
@@ -21,8 +20,16 @@ class _AddScreenState extends State<AddScreen> {
   bool _isLoading = false;
   final authService = GetIt.instance<AuthService>();
 
-  DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+  late Timestamp _selectedDueDate;
   bool _isCompleted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDueDate = Timestamp.fromDate(
+      DateTime.now().add(const Duration(days: 1)),
+    );
+  }
 
   @override
   void dispose() {
@@ -34,13 +41,13 @@ class _AddScreenState extends State<AddScreen> {
   Future<void> _selectDueDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDueDate,
+      initialDate: _selectedDueDate.toDate(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null && picked != _selectedDueDate) {
+    if (picked != null && picked != _selectedDueDate.toDate()) {
       setState(() {
-        _selectedDueDate = picked;
+        _selectedDueDate = Timestamp.fromDate(picked);
       });
     }
   }
@@ -52,10 +59,10 @@ class _AddScreenState extends State<AddScreen> {
       });
 
       try {
-        final task = TaskItem(
+        final task = Task(
           title: _titleController.text,
           description: _descriptionController.text,
-          createdBy: authService.currentUserDetails?.id ?? 0,
+          createdBy: (await authService.currentUserDetails)?.uid ?? '',
           dueDate: _selectedDueDate,
           completed: _isCompleted,
         );
@@ -73,7 +80,9 @@ class _AddScreenState extends State<AddScreen> {
           _titleController.clear();
           _descriptionController.clear();
           setState(() {
-            _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+            _selectedDueDate = Timestamp.fromDate(
+              DateTime.now().add(const Duration(days: 1)),
+            );
             _isCompleted = false;
           });
         }
@@ -163,7 +172,7 @@ class _AddScreenState extends State<AddScreen> {
               ListTile(
                 title: const Text('Due Date'),
                 subtitle: Text(
-                  '${_selectedDueDate.year}-${_selectedDueDate.month}-${_selectedDueDate.day}',
+                  '${_selectedDueDate.toDate().year}-${_selectedDueDate.toDate().month}-${_selectedDueDate.toDate().day}',
                 ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _selectDueDate,

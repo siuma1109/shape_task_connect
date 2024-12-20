@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/user.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 import '../../widgets/task/task_card.dart';
 import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
+import '../../models/user.dart';
 
 class UserDetails extends StatefulWidget {
   final User user;
@@ -22,7 +22,7 @@ class UserDetails extends StatefulWidget {
 
 class _UserDetailsState extends State<UserDetails> {
   final _taskRepository = GetIt.instance<TaskRepository>();
-  late Future<List<TaskItem>> _userTasksFuture;
+  late Future<List<Task>> _userTasksFuture;
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _UserDetailsState extends State<UserDetails> {
 
   void _loadUserTasks() {
     setState(() {
-      _userTasksFuture = _taskRepository.getTasksByUser(widget.user.id!);
+      _userTasksFuture = _taskRepository.getTasksByUser(widget.user.uid);
     });
   }
 
@@ -45,7 +45,7 @@ class _UserDetailsState extends State<UserDetails> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.user.username,
+          widget.user.displayName ?? '',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -87,7 +87,7 @@ class _UserDetailsState extends State<UserDetails> {
                         CircleAvatar(
                           radius: 30,
                           child: Text(
-                            widget.user.username[0].toUpperCase(),
+                            widget.user.displayName?[0].toUpperCase() ?? '',
                             style: const TextStyle(fontSize: 24),
                           ),
                         ),
@@ -97,12 +97,12 @@ class _UserDetailsState extends State<UserDetails> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.user.username,
+                                widget.user.displayName ?? '',
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                widget.user.email,
+                                widget.user.email ?? '',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],
@@ -132,7 +132,7 @@ class _UserDetailsState extends State<UserDetails> {
 
             // Tasks List
             Expanded(
-              child: FutureBuilder<List<TaskItem>>(
+              child: FutureBuilder<List<Task>>(
                 future: _userTasksFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {

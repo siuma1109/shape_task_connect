@@ -1,121 +1,93 @@
-import '../models/user.dart';
-import '../services/database_service.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shape_task_connect/models/user.dart';
 
 class UserRepository {
-  final DatabaseService _databaseService;
-
-  UserRepository(this._databaseService);
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final CollectionReference _usersCollection =
+      FirebaseFirestore.instance.collection('users');
 
   // Create
   Future<bool> createUser(User user) async {
     try {
-      final db = await _databaseService.database;
-      await db.insert(
-        'users',
-        user.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.abort,
-      );
+      await _usersCollection.doc(user.uid).set(user.toMap());
       return true;
     } catch (e) {
+      print('Failed to create user: $e');
       return false;
     }
   }
 
   // Read
   Future<List<User>> getAllUsers() async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query('users');
-    return List.generate(maps.length, (i) => User.fromMap(maps[i]));
+    return _usersCollection.get().then((value) => value.docs
+        .map((doc) => User.fromMap(doc.data() as Map<String, dynamic>))
+        .toList());
   }
 
-  Future<User?> getUser(int id) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'users',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (maps.isEmpty) return null;
-    return User.fromMap(maps.first);
+  Future<User?> getUser(String id) async {
+    final DocumentSnapshot doc = await _usersCollection.doc(id).get();
+    if (!doc.exists) return null;
+    return User.fromMap(doc.data() as Map<String, dynamic>);
   }
 
   Future<User?> getUserByEmail(String email) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'users',
-      where: 'email = ?',
-      whereArgs: [email],
-    );
+    final QuerySnapshot snapshot =
+        await _usersCollection.where('email', isEqualTo: email).limit(1).get();
+    if (snapshot.docs.isEmpty) return null;
+    final data = snapshot.docs.first.data() as Map<String, dynamic>;
 
-    if (maps.isEmpty) return null;
-    return User.fromMap(maps.first);
+    return User(
+      uid: snapshot.docs.first.id,
+      email: data['email'],
+      displayName: data['displayName'],
+      createdAt: data['created_at'],
+    );
   }
 
   Future<User?> getUserByUsername(String username) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'users',
-      where: 'username = ?',
-      whereArgs: [username],
-    );
-
-    if (maps.isEmpty) return null;
-    return User.fromMap(maps.first);
+    final QuerySnapshot snapshot = await _usersCollection
+        .where('username', isEqualTo: username)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isEmpty) return null;
+    return User.fromMap(snapshot.docs.first.data() as Map<String, dynamic>);
   }
 
   // Update
   Future<bool> updateUser(User user) async {
     try {
-      final db = await _databaseService.database;
-      final count = await db.update(
-        'users',
-        user.toMap(),
-        where: 'id = ?',
-        whereArgs: [user.id],
-      );
-      return count > 0;
+      await _usersCollection.doc(user.uid).update(user.toMap());
+      return true;
     } catch (e) {
       return false;
     }
   }
 
   // Delete
-  Future<bool> deleteUser(int id) async {
+  Future<bool> deleteUser(String id) async {
     try {
-      final db = await _databaseService.database;
+      // Delete user's tasks (you might want to handle this differently)
+      final QuerySnapshot taskSnapshot = await _firestore
+          .collection('tasks')
+          .where('created_by', isEqualTo: id)
+          .get();
 
-      // First delete all tasks created by this user
-      await db.delete(
-        'tasks',
-        where: 'created_by = ?',
-        whereArgs: [id],
-      );
+      final batch = _firestore.batch();
+      for (var doc in taskSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
 
-      // Then delete the user
-      final count = await db.delete(
-        'users',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-      return count > 0;
+      // Delete the user
+      batch.delete(_usersCollection.doc(id));
+
+      await batch.commit();
+      return true;
     } catch (e) {
       return false;
     }
   }
 
   // Validation methods
-  Future<bool> validateUser(String email, String password) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> users = await db.query(
-      'users',
-      where: 'email = ? AND password = ?',
-      whereArgs: [email, password],
-    );
-    return users.isNotEmpty;
-  }
-
   Future<bool> isEmailTaken(String email) async {
     final user = await getUserByEmail(email);
     return user != null;
@@ -128,13 +100,13 @@ class UserRepository {
 
   // Search users by keyword (username or email)
   Future<List<User>> searchUsers(String keyword) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'users',
-      where: 'username LIKE ? OR email LIKE ?',
-      whereArgs: ['%$keyword%', '%$keyword%'],
-    );
+    final QuerySnapshot snapshot = await _usersCollection
+        .where('displayName', isGreaterThanOrEqualTo: keyword)
+        .where('displayName', isLessThan: keyword + '\uf8ff')
+        .get();
 
-    return List.generate(maps.length, (i) => User.fromMap(maps[i]));
+    return snapshot.docs
+        .map((doc) => User.fromMap(doc.data() as Map<String, dynamic>))
+        .toList();
   }
 }

@@ -22,27 +22,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
-      bool success = await widget.authService.register(
-        _emailController.text,
-        _usernameController.text,
-        _passwordController.text,
-      );
+      try {
+        bool success = await widget.authService.register(
+          _emailController.text,
+          _usernameController.text,
+          _passwordController.text,
+        );
 
-      setState(() => _isLoading = false);
+        if (mounted) {
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Registration successful! Please login')),
+            );
+            Navigator.pop(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content:
+                      Text('Registration failed. Email may already be in use')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          String errorMessage = 'Registration failed';
 
-      if (mounted) {
-        if (success) {
+          if (e.toString().contains('PigeonUserDetails')) {
+            errorMessage = 'Error creating user profile. Please try again.';
+          } else if (e.toString().contains('email-already-in-use')) {
+            errorMessage = 'This email is already registered';
+          } else if (e.toString().contains('invalid-email')) {
+            errorMessage = 'Invalid email format';
+          } else if (e.toString().contains('weak-password')) {
+            errorMessage = 'Password is too weak';
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Registration successful! Please login')),
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+            ),
           );
-          Navigator.pop(context);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Registration failed. Email may already be in use')),
-          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
         }
       }
     }

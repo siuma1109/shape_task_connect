@@ -1,4 +1,4 @@
-import '../models/task_item.dart';
+import '../models/task.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DemoData {

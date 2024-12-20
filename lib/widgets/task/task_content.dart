@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 
 class TaskContent extends StatelessWidget {
-  final TaskItem task;
+  final Task task;
 
   const TaskContent({super.key, required this.task});
 

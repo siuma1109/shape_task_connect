@@ -81,7 +81,6 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
 
         if (!mounted) return;
-
         if (success) {
           final shouldEnableBiometric = await showCupertinoDialog<bool>(
                 context: context,

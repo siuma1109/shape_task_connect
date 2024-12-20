@@ -1,11 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/user.dart';
 
 class Comment {
-  final int? id;
-  final int taskId;
-  final int userId;
+  final String? id;
+  final String taskId;
+  final String userId;
   final String content;
-  final DateTime createdAt;
+  final Timestamp createdAt;
   final double? latitude;
   final double? longitude;
   final String? address;
@@ -17,13 +19,13 @@ class Comment {
     required this.taskId,
     required this.userId,
     required this.content,
-    DateTime? createdAt,
+    Timestamp? createdAt,
     this.latitude,
     this.longitude,
     this.address,
     this.photoPath,
     this.user,
-  }) : createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? Timestamp.now();
 
   Map<String, dynamic> toMap() {
     return {
@@ -31,7 +33,7 @@ class Comment {
       'task_id': taskId,
       'user_id': userId,
       'content': content,
-      'created_at': createdAt.toString(),
+      'created_at': createdAt,
       'latitude': latitude,
       'longitude': longitude,
       'address': address,
@@ -45,7 +47,7 @@ class Comment {
       taskId: map['task_id'],
       userId: map['user_id'],
       content: map['content'],
-      createdAt: DateTime.parse(map['created_at']),
+      createdAt: map['created_at'] as Timestamp,
       latitude: map['latitude'],
       longitude: map['longitude'],
       address: map['address'],

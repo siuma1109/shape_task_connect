@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shape_task_connect/services/auth_service.dart';
 import 'package:shape_task_connect/widgets/task/edit_task_widget.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 
 class TaskActions extends StatefulWidget {
-  final TaskItem task;
+  final Task task;
   final Future<void> Function()? onRefresh;
   final bool? isInDetails;
 
@@ -34,7 +34,7 @@ class _TaskActionsState extends State<TaskActions> {
   }
 
   Future<void> _checkJoinStatus() async {
-    final userId = authService.currentUserDetails?.id;
+    final userId = (await authService.currentUserDetails)?.uid;
     final isJoined =
         await _taskRepository.isUserJoined(widget.task.id!, userId!);
     if (mounted) {
@@ -52,7 +52,7 @@ class _TaskActionsState extends State<TaskActions> {
     });
 
     try {
-      final userId = GetIt.instance<AuthService>().currentUserDetails?.id;
+      final userId = GetIt.instance<AuthService>().currentUserDetails?.uid;
 
       if (_isJoined) {
         await _taskRepository.leaveTask(widget.task.id!, userId!);
@@ -90,19 +90,17 @@ class _TaskActionsState extends State<TaskActions> {
   }
 
   void _showEditDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => EditTaskWidget(
-        taskId: widget.task.id!,
-        onRefresh: widget.onRefresh,
-      ),
+    EditTaskWidget.show(
+      context,
+      widget.task.id!,
+      onRefresh: widget.onRefresh,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final authService = GetIt.instance<AuthService>();
-    final currentUserId = authService.currentUserDetails?.id;
+    final currentUserId = authService.currentUserDetails?.uid;
     final isOwner = widget.task.createdBy == currentUserId;
 
     return Row(

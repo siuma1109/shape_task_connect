@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/public_holiday_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/locator.dart';
 import '../../widgets/custom_calendar.dart';
 import '../../widgets/task/task_list.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   final AuthService _authService = locator<AuthService>();
   late final DateTime _firstAllowedDay;
   late final DateTime _lastAllowedDay;
-  List<TaskItem> _tasks = [];
+  List<Task> _tasks = [];
   bool _isLoading = false;
   Map<DateTime, int> _taskCounts = {};
 
@@ -53,9 +54,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
 
         final counts = await _taskRepository.getTaskCountsByDateRange(
-          currentUser.id,
-          startDate,
-          endDate,
+          currentUser.uid,
+          Timestamp.fromDate(startDate),
+          Timestamp.fromDate(endDate),
         );
 
         setState(() {
@@ -93,8 +94,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final endOfDay = DateTime(
             _focusedDay.year, _focusedDay.month, _focusedDay.day, 23, 59, 59);
         final tasks = await _taskRepository.getTasksByUserAndDueDateRange(
-            currentUser.id, startOfDay, endOfDay);
-        print('Values: ${currentUser.id} $startOfDay $endOfDay');
+            currentUser.uid,
+            Timestamp.fromDate(startOfDay),
+            Timestamp.fromDate(endOfDay));
+
+        print('Values: $currentUser.uid $startOfDay $endOfDay');
         print('Tasks: ${tasks.length}');
         setState(() {
           _tasks = tasks;

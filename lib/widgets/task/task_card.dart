@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import 'task_header.dart';
 import 'task_content.dart';
 import 'task_actions.dart';
@@ -8,7 +8,7 @@ import '../../screens/task/task_comment_screen.dart';
 import '../../repositories/comment_repository.dart';
 
 class TaskCard extends StatefulWidget {
-  final TaskItem task;
+  final Task task;
   final bool isInDetails;
   final bool isClickable;
   final Future<void> Function()? onRefresh;
@@ -36,8 +36,7 @@ class _TaskCardState extends State<TaskCard> {
   }
 
   void _loadCommentCount() {
-    _commentCountFuture =
-        _commentRepository.countTaskComments(widget.task.id ?? 0);
+    _commentCountFuture = _commentRepository.countTaskComments(widget.task.id!);
   }
 
   @override
@@ -76,17 +75,18 @@ class _TaskCardState extends State<TaskCard> {
               Icon(
                 Icons.event,
                 size: 20,
-                color: widget.task.dueDate.isBefore(DateTime.now())
+                color: widget.task.dueDate.toDate().isBefore(DateTime.now())
                     ? Colors.red
                     : Colors.grey,
               ),
               const SizedBox(width: 8),
               Text(
-                '${widget.task.dueDate.year}-${widget.task.dueDate.month}-${widget.task.dueDate.day}',
+                '${widget.task.dueDate.toDate().year}-${widget.task.dueDate.toDate().month}-${widget.task.dueDate.toDate().day}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: widget.task.dueDate.isBefore(DateTime.now())
-                          ? Colors.red
-                          : null,
+                      color:
+                          widget.task.dueDate.toDate().isBefore(DateTime.now())
+                              ? Colors.red
+                              : null,
                     ),
               ),
               const SizedBox(width: 24),

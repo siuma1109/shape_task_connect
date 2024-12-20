@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../../utils/date_formatter.dart';
 
 class TaskHeader extends StatelessWidget {
-  final TaskItem task;
+  final Task task;
 
   const TaskHeader({super.key, required this.task});
 
@@ -30,13 +30,13 @@ class TaskHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  task.user?.username ?? 'User id: ${task.createdBy}',
+                  task.user?.displayName ?? 'User id: ${task.createdBy}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  DateFormatter.getTimeAgo(task.createdAt ?? DateTime.now()),
+                  DateFormatter.getTimeAgo(task.createdAt),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
