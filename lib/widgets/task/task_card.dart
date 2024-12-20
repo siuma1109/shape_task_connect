@@ -4,7 +4,7 @@ import '../../models/task.dart';
 import 'task_header.dart';
 import 'task_content.dart';
 import 'task_actions.dart';
-import '../../screens/task/task_comment_screen.dart';
+import 'task_comments.dart';
 import '../../repositories/comment_repository.dart';
 
 class TaskCard extends StatefulWidget {
@@ -47,7 +47,7 @@ class _TaskCardState extends State<TaskCard> {
       child: widget.isClickable && !widget.isInDetails
           ? InkWell(
               onTap: () async {
-                final result = await TaskCommentScreen.show(
+                final result = await TaskComments.show(
                   context,
                   widget.task,
                   onRefresh: widget.onRefresh,
