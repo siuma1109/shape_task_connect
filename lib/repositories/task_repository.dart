@@ -1,276 +1,291 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shape_task_connect/models/user.dart';
-import 'package:sqflite/sqflite.dart';
-import '../models/task_item.dart';
-import '../services/database_service.dart';
+import '../models/task.dart';
 
 class TaskRepository {
-  final DatabaseService _databaseService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _tasksCollection = 'tasks';
+  final String _taskUsersCollection = 'task_users';
 
-  TaskRepository(this._databaseService);
-
-  Future<int> createTask(TaskItem task) async {
-    final db = await _databaseService.database;
-    return await db.insert(
-      'tasks',
-      task.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );
+  Future<String> createTask(Task task) async {
+    final docRef =
+        await _firestore.collection(_tasksCollection).add(task.toMap());
+    return docRef.id;
   }
 
-  Future<bool> joinTask(int taskId, int userId) async {
-    final db = await _databaseService.database;
+  Future<bool> joinTask(String taskId, String userId) async {
     try {
-      await db.insert(
-        'task_users',
-        {
-          'task_id': taskId,
-          'user_id': userId,
-        },
-        conflictAlgorithm: ConflictAlgorithm.abort,
-      );
+      await _firestore.collection(_taskUsersCollection).add({
+        'task_id': taskId,
+        'user_id': userId,
+      });
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  Future<List<TaskItem>> getTasks() async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query('tasks');
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+  Future<List<Task>> getAllTasks() async {
+    final querySnapshot = await _firestore
+        .collection(_tasksCollection)
+        .orderBy('due_date', descending: true)
+        .get();
+
+    final tasks = <Task>[];
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      data['completed'] = data['completed'] == 1;
+      // Get user data
+      if (data['created_by'] != null) {
+        final userDoc =
+            await _firestore.collection('users').doc(data['created_by']).get();
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          data['user'] = User(
+            uid: userDoc.id,
+            email: userData['email'],
+            displayName: userData['displayName'],
+          ).toMap();
+        }
+      }
+
+      tasks.add(Task.fromMap(data));
+    }
+
+    return tasks;
   }
 
-  // Read
-  Future<List<TaskItem>> getAllTasks() async {
-    final db = await _databaseService.database;
+  Future<Task?> getTask(String id) async {
+    final doc = await _firestore.collection(_tasksCollection).doc(id).get();
+    if (!doc.exists) return null;
 
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT 
-        t.*,
-        u.id as user_id,
-        u.username as user_name,
-        u.email as user_email
-      FROM tasks t
-      LEFT JOIN users u ON t.created_by = u.id
-      ORDER BY t.created_at DESC
-    ''');
+    final data = doc.data()!;
+    data['id'] = doc.id;
 
-    return maps.map((map) {
-      // Create a user map from the joined data
-      final userMap = {
-        'id': map['user_id'],
-        'username': map['user_name'],
-        'email': map['user_email'],
-      };
+    // Get user data
+    if (data['created_by'] != null) {
+      final userDoc =
+          await _firestore.collection('users').doc(data['created_by']).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        data['user'] = {
+          'uid': userDoc.id,
+          'displayName': userData['displayName'],
+          'email': userData['email'],
+          'created_at': userData['created_at'],
+        };
+      }
+    }
 
-      // Create the comment map
-      final taskMap = {
-        'id': map['id'],
-        'title': map['title'],
-        'description': map['description'],
-        'due_date': map['due_date'],
-        'completed': map['completed'],
-        'created_by': map['created_by'],
-        'created_at': map['created_at'],
-        'user': userMap,
-      };
-
-      return TaskItem.fromMap(taskMap);
-    }).toList();
+    return Task.fromMap(data);
   }
 
-  Future<TaskItem?> getTask(int id) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isEmpty) return null;
-    return TaskItem.fromMap(maps.first);
+  Future<void> updateTask(Task task) async {
+    await _firestore
+        .collection(_tasksCollection)
+        .doc(task.id.toString())
+        .update(task.toMap());
   }
 
-  // Update
-  Future<int> updateTask(TaskItem task) async {
-    final db = await _databaseService.database;
-    return await db.update(
-      'tasks',
-      {
-        'title': task.title,
-        'description': task.description,
-        'due_date': task.dueDate.toString(),
-        'completed': task.completed ? 1 : 0,
-      },
-      where: 'id = ?',
-      whereArgs: [task.id],
-    );
+  Future<void> deleteTask(String id) async {
+    await _firestore.collection(_tasksCollection).doc(id).delete();
+
+    // Delete related task_users documents
+    final querySnapshot = await _firestore
+        .collection(_taskUsersCollection)
+        .where('task_id', isEqualTo: id)
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 
-  // Delete
-  Future<int> deleteTask(int id) async {
-    final db = await _databaseService.database;
-    return await db.delete(
-      'tasks',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<List<Task>> searchTasks(String keyword) async {
+    final querySnapshot = await _firestore
+        .collection(_tasksCollection)
+        .where('title', isGreaterThanOrEqualTo: keyword)
+        .where('title', isLessThan: keyword + '\uf8ff')
+        .get();
+
+    final tasks = <Task>[];
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      data['completed'] = data['completed'] == 1;
+
+      // Get user data
+      final userDoc =
+          await _firestore.collection('users').doc(data['created_by']).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        data['user'] = {
+          'uid': userDoc.id,
+          'displayName': userData['displayName'],
+          'email': userData['email'],
+          'createdAt': userData['created_at'],
+        };
+      }
+      print('data: ${data.toString()}');
+      tasks.add(Task.fromMap(data));
+    }
+
+    return tasks;
   }
 
-  // Search tasks by keyword
-  Future<List<TaskItem>> searchTasks(String keyword) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'tasks',
-      where: 'title LIKE ? OR description LIKE ?',
-      whereArgs: ['%$keyword%', '%$keyword%'],
-      orderBy: 'created_at DESC',
-    );
+  Future<List<Task>> getTasksByUser(String userId) async {
+    // Get tasks created by user
+    final createdTasksQuery = await _firestore
+        .collection(_tasksCollection)
+        .where('created_by', isEqualTo: userId)
+        .get();
 
-    return List.generate(maps.length, (i) => TaskItem.fromMap(maps[i]));
+    // Get tasks joined by user
+    final joinedTasksQuery = await _firestore
+        .collection(_taskUsersCollection)
+        .where('user_id', isEqualTo: userId)
+        .get();
+
+    final joinedTaskIds = joinedTasksQuery.docs
+        .map((doc) => doc.data()['task_id'] as String)
+        .toList();
+
+    final tasks = <Task>[];
+
+    // Process created tasks
+    for (var doc in createdTasksQuery.docs) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      data['completed'] = data['completed'] == 1;
+      await _addUserDataToTask(data);
+      tasks.add(Task.fromMap(data));
+    }
+
+    // Process joined tasks
+    for (String taskId in joinedTaskIds) {
+      final taskDoc =
+          await _firestore.collection(_tasksCollection).doc(taskId).get();
+      if (taskDoc.exists) {
+        final data = taskDoc.data()!;
+        data['id'] = taskDoc.id;
+        data['completed'] = data['completed'] == 1;
+        await _addUserDataToTask(data);
+        tasks.add(Task.fromMap(data));
+      }
+    }
+
+    return tasks;
   }
 
-  // Get tasks by user ID (both created and joined tasks)
-  Future<List<TaskItem>> getTasksByUser(int userId) async {
-    final db = await _databaseService.database;
-
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT 
-        t.*,
-        u.id as user_id,
-        u.username as user_name,
-        u.email as user_email
-      FROM tasks t
-      LEFT JOIN users u ON t.created_by = u.id
-      WHERE t.created_by = ?
-        OR t.id IN (
-          SELECT task_id 
-          FROM task_users 
-          WHERE user_id = ?
-        )
-      ORDER BY t.created_at DESC
-    ''', [userId, userId]);
-
-    return maps.map((map) {
-      // Create a user map from the joined data
-      final userMap = {
-        'id': map['user_id'],
-        'username': map['user_name'],
-        'email': map['user_email'],
-      };
-
-      // Create the task map
-      final taskMap = {
-        'id': map['id'],
-        'title': map['title'],
-        'description': map['description'],
-        'created_by': map['created_by'],
-        'created_at': map['created_at'],
-        'due_date': map['due_date'],
-        'completed': map['completed'],
-        'user': userMap,
-      };
-
-      return TaskItem.fromMap(taskMap);
-    }).toList();
+  Future<void> _addUserDataToTask(Map<String, dynamic> taskData) async {
+    if (taskData['created_by'] != null) {
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(taskData['created_by'])
+          .get();
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        taskData['user'] = User(
+          uid: userDoc.id,
+          email: userData['email'],
+          displayName: userData['displayName'],
+          createdAt: userData['created_at'],
+        ).toMap();
+      }
+    }
   }
 
-  Future<bool> isUserJoined(int taskId, int userId) async {
-    final db = await _databaseService.database;
-    final result = await db.query(
-      'task_users',
-      where: 'task_id = ? AND user_id = ?',
-      whereArgs: [taskId, userId],
-    );
-    return result.isNotEmpty;
+  Future<bool> isUserJoined(String taskId, String userId) async {
+    final querySnapshot = await _firestore
+        .collection(_taskUsersCollection)
+        .where('task_id', isEqualTo: taskId)
+        .where('user_id', isEqualTo: userId)
+        .get();
+    return querySnapshot.docs.isNotEmpty;
   }
 
-  Future<bool> leaveTask(int taskId, int userId) async {
-    final db = await _databaseService.database;
+  Future<bool> leaveTask(String taskId, String userId) async {
     try {
-      await db.delete(
-        'task_users',
-        where: 'task_id = ? AND user_id = ?',
-        whereArgs: [taskId, userId],
-      );
+      final querySnapshot = await _firestore
+          .collection(_taskUsersCollection)
+          .where('task_id', isEqualTo: taskId)
+          .where('user_id', isEqualTo: userId)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  Future<List<TaskItem>> getTasksByUserAndDueDateRange(
-      int? userId, DateTime startDate, DateTime endDate) async {
-    final Database db = await _databaseService.database;
+  Future<List<Task>> getTasksByUserAndDueDateRange(
+      String userId, Timestamp startDate, Timestamp endDate) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('tasks')
+          .where('created_by', isEqualTo: userId)
+          .where('due_date', isGreaterThanOrEqualTo: startDate)
+          .where('due_date', isLessThanOrEqualTo: endDate)
+          .get();
 
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT 
-        t.*,
-        u.id as user_id,
-        u.username as user_name,
-        u.email as user_email
-      FROM tasks t
-      LEFT JOIN users u ON t.created_by = u.id
-      WHERE (t.created_by = ? 
-        OR t.id IN (
-          SELECT task_id 
-          FROM task_users 
-          WHERE user_id = ?
-        ))
-      AND t.due_date BETWEEN ? AND ?
-      ORDER BY t.due_date DESC
-    ''', [userId, userId, startDate.toString(), endDate.toString()]);
+      return Future.wait(querySnapshot.docs.map((doc) async {
+        final data = doc.data();
+        final userDoc =
+            await _firestore.collection('users').doc(data['created_by']).get();
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          data['user'] = User(
+            uid: userDoc.id,
+            email: userData['email'],
+            displayName: userData['displayName'],
+          );
+        }
 
-    return maps.map((map) {
-      // Create a user map from the joined data
-      final userMap = {
-        'id': map['user_id'],
-        'username': map['user_name'],
-        'email': map['user_email'],
-      };
-
-      // Create the task map
-      final taskMap = {
-        'id': map['id'],
-        'title': map['title'],
-        'description': map['description'],
-        'created_by': map['created_by'],
-        'created_at': map['created_at'],
-        'due_date': map['due_date'],
-        'completed': map['completed'],
-        'user': userMap,
-      };
-
-      return TaskItem.fromMap(taskMap);
-    }).toList();
+        return Task(
+          id: doc.id,
+          title: data['title'],
+          description: data['description'],
+          createdBy: data['created_by'],
+          createdAt: data['created_at'],
+          dueDate: data['due_date'],
+          completed: data['completed'] == 1,
+          user: data['user'],
+        );
+      }).toList());
+    } catch (e) {
+      print('Error fetching tasks by date range: $e');
+      return [];
+    }
   }
 
   Future<Map<DateTime, int>> getTaskCountsByDateRange(
-    int? userId,
-    DateTime startDate,
-    DateTime endDate,
+    String userId,
+    Timestamp startDate,
+    Timestamp endDate,
   ) async {
-    final Database db = await _databaseService.database;
+    try {
+      final tasks =
+          await getTasksByUserAndDueDateRange(userId, startDate, endDate);
+      final taskCounts = <DateTime, int>{};
 
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT t.* 
-      FROM tasks t
-      WHERE (t.created_by = ? 
-        OR t.id IN (
-          SELECT task_id 
-          FROM task_users 
-          WHERE user_id = ?
-        ))
-      AND t.due_date BETWEEN ? AND ?
-    ''', [userId, userId, startDate.toString(), endDate.toString()]);
+      for (final task in tasks) {
+        // Convert Timestamp to DateTime for grouping
+        final date = DateTime(
+          task.dueDate.toDate().year,
+          task.dueDate.toDate().month,
+          task.dueDate.toDate().day,
+        );
+        taskCounts[date] = (taskCounts[date] ?? 0) + 1;
+      }
 
-    final taskCounts = <DateTime, int>{};
-
-    for (final map in maps) {
-      final dueDate = DateTime.parse(map['due_date']);
-      final date = DateTime(dueDate.year, dueDate.month, dueDate.day);
-      taskCounts[date] = (taskCounts[date] ?? 0) + 1;
+      return taskCounts;
+    } catch (e) {
+      print('Error getting task counts by date range: $e');
+      return {};
     }
-
-    return taskCounts;
   }
 }

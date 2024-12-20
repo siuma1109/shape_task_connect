@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../widgets/task/task_comments.dart';
 
 class TaskCommentScreen extends StatefulWidget {
-  final TaskItem task;
+  final Task task;
   final Future<void> Function()? onRefresh;
 
   const TaskCommentScreen({
@@ -12,7 +12,7 @@ class TaskCommentScreen extends StatefulWidget {
     this.onRefresh,
   });
 
-  static Future<bool?> show(BuildContext context, TaskItem task,
+  static Future<bool?> show(BuildContext context, Task task,
       {Future<void> Function()? onRefresh}) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -30,7 +30,7 @@ class TaskCommentScreen extends StatefulWidget {
 }
 
 class _TaskCommentScreenState extends State<TaskCommentScreen> {
-  late TaskItem _task;
+  late Task _task;
 
   @override
   void initState() {
@@ -38,7 +38,7 @@ class _TaskCommentScreenState extends State<TaskCommentScreen> {
     _task = widget.task;
   }
 
-  Future<void> onTaskUpdated(TaskItem updatedTask) async {
+  Future<void> onTaskUpdated(Task updatedTask) async {
     setState(() {
       _task = updatedTask;
     });
@@ -61,7 +61,7 @@ class _TaskCommentScreenState extends State<TaskCommentScreen> {
           _buildHandle(),
           _buildHeader(),
           Expanded(
-            child: TaskComments(taskId: _task.id ?? 0),
+            child: TaskComments(taskId: _task.id!),
           ),
         ],
       ),

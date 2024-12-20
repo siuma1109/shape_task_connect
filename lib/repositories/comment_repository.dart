@@ -1,127 +1,112 @@
-import 'package:sqflite/sqflite.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shape_task_connect/models/user.dart';
 import '../models/comment.dart';
-import '../services/database_service.dart';
 
 class CommentRepository {
-  final DatabaseService _databaseService;
-
-  CommentRepository(this._databaseService);
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _collection = 'comments';
 
   // Create
-  Future<int> createComment(Comment comment) async {
-    final db = await _databaseService.database;
-    return await db.insert(
-      'comments',
-      comment.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );
+  Future<String> createComment(Comment comment) async {
+    final docRef =
+        await _firestore.collection(_collection).add(comment.toMap());
+    return docRef.id;
   }
 
   // Read
-  Future<List<Comment>> getCommentsByTask(int taskId) async {
-    final db = await _databaseService.database;
+  Future<List<Comment>> getCommentsByTask(String taskId) async {
+    final querySnapshot = await _firestore
+        .collection(_collection)
+        .where('task_id', isEqualTo: taskId)
+        .orderBy('created_at', descending: true)
+        .get();
 
-    // Join comments with users table to get user data
-    final List<Map<String, dynamic>> results = await db.rawQuery('''
-      SELECT 
-        c.*,
-        u.id as user_id,
-        u.username as user_name,
-        u.email as user_email
-      FROM comments c
-      LEFT JOIN users u ON c.user_id = u.id
-      WHERE c.task_id = ?
-      ORDER BY c.created_at DESC
-    ''', [taskId]);
+    return Future.wait(querySnapshot.docs.map((doc) async {
+      final data = doc.data();
+      data['id'] = doc.id;
 
-    return results.map((result) {
-      // Create a user map from the joined data
-      final userMap = {
-        'id': result['user_id'],
-        'username': result['user_name'],
-        'email': result['user_email'],
-      };
+      // Get user data
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(data['user_id'].toString())
+          .get();
 
-      // Create the comment map
-      final commentMap = {
-        'id': result['id'],
-        'task_id': result['task_id'],
-        'user_id': result['user_id'],
-        'content': result['content'],
-        'created_at': result['created_at'],
-        'latitude': result['latitude'],
-        'longitude': result['longitude'],
-        'address': result['address'],
-        'photo_path': result['photo_path'],
-        'user': userMap,
-      };
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        data['user'] = User(
+          uid: userDoc.id,
+          email: userData['email'],
+          displayName: userData['displayName'],
+        ).toMap();
+      }
 
-      return Comment.fromMap(commentMap);
-    }).toList();
+      return Comment.fromMap(data);
+    }).toList());
   }
 
   Future<List<Comment>> getCommentsByUser(int userId) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'comments',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-      orderBy: 'created_at DESC',
-    );
+    final querySnapshot = await _firestore
+        .collection(_collection)
+        .where('user_id', isEqualTo: userId)
+        .orderBy('created_at', descending: true)
+        .get();
 
-    return List.generate(maps.length, (i) => Comment.fromMap(maps[i]));
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return Comment.fromMap(data);
+    }).toList();
   }
 
-  Future<Comment?> getComment(int id) async {
-    final db = await _databaseService.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'comments',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<Comment?> getComment(String id) async {
+    final doc = await _firestore.collection(_collection).doc(id).get();
 
-    if (maps.isEmpty) return null;
-    return Comment.fromMap(maps.first);
+    if (!doc.exists) return null;
+
+    final data = doc.data()!;
+    data['id'] = doc.id;
+    return Comment.fromMap(data);
   }
 
   // Update
-  Future<int> updateComment(Comment comment) async {
-    final db = await _databaseService.database;
-    return await db.update(
-      'comments',
-      comment.toMap(),
-      where: 'id = ?',
-      whereArgs: [comment.id],
-    );
+  Future<void> updateComment(Comment comment) async {
+    await _firestore.collection(_collection).doc(comment.id).update({
+      'content': comment.content,
+      'latitude': comment.latitude,
+      'longitude': comment.longitude,
+      'address': comment.address,
+      'photo_path': comment.photoPath,
+    });
   }
 
   // Delete
-  Future<int> deleteComment(int id) async {
-    final db = await _databaseService.database;
-    return await db.delete(
-      'comments',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  Future<void> deleteComment(String id) async {
+    await _firestore.collection(_collection).doc(id).delete();
   }
 
   // Delete all comments for a task
-  Future<int> deleteTaskComments(int taskId) async {
-    final db = await _databaseService.database;
-    return await db.delete(
-      'comments',
-      where: 'task_id = ?',
-      whereArgs: [taskId],
-    );
+  Future<void> deleteTaskComments(String taskId) async {
+    final batch = _firestore.batch();
+    final snapshots = await _firestore
+        .collection(_collection)
+        .where('task_id', isEqualTo: taskId)
+        .get();
+
+    for (var doc in snapshots.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
   }
 
   // Count comments for a task
-  Future<int> countTaskComments(int taskId) async {
-    final db = await _databaseService.database;
-    final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM comments WHERE task_id = ?',
-      [taskId],
-    );
-    return Sqflite.firstIntValue(result) ?? 0;
+  Future<int> countTaskComments(String taskId) async {
+    final snapshot = await _firestore
+        .collection(_collection)
+        .where('task_id', isEqualTo: taskId)
+        .count()
+        .get();
+
+    return snapshot.count ?? 0;
   }
 }

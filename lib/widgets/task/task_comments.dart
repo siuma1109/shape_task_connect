@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 
 class TaskComments extends StatefulWidget {
-  final int taskId;
+  final String taskId;
 
   const TaskComments({
     super.key,
@@ -28,6 +28,7 @@ class _TaskCommentsState extends State<TaskComments> {
   final _authService = GetIt.instance<AuthService>();
   late Future<List<Comment>> _commentsFuture;
   final _imageLabeler = ImageLabeler(options: ImageLabelerOptions());
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -43,36 +44,65 @@ class _TaskCommentsState extends State<TaskComments> {
   }
 
   void _loadComments() {
+    try {
+      if (widget.taskId.isEmpty) {
+        throw Exception('Task ID cannot be empty');
+      }
+      _commentsFuture = _commentRepository.getCommentsByTask(widget.taskId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to load comments. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      _commentsFuture = Future.value([]);
+    }
+  }
+
+  Future<void> _refreshComments() async {
     setState(() {
       _commentsFuture = _commentRepository.getCommentsByTask(widget.taskId);
     });
   }
 
-  Future<void> _refreshComments() async {
-    _loadComments();
-  }
-
   Future<void> _addComment() async {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
+    if (widget.taskId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid task ID'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     try {
       setState(() {
+        _isLoading = true;
         _commentController.clear();
-        FocusScope.of(context).unfocus(); // Hide keyboard after sending
+        FocusScope.of(context).unfocus();
       });
 
       final comment = Comment(
         taskId: widget.taskId,
-        userId: _authService.currentUserDetails?.id ??
-            0, // Use authenticated user ID
+        userId: _authService.currentUserDetails!.uid,
         content: content,
-        createdAt: DateTime.now(),
       );
 
       await _commentRepository.createComment(comment);
-      _refreshComments();
+      setState(() {
+        _commentsFuture = _commentRepository.getCommentsByTask(widget.taskId);
+        _isLoading = false;
+      });
     } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -112,17 +142,17 @@ class _TaskCommentsState extends State<TaskComments> {
     try {
       final comment = Comment(
         taskId: widget.taskId,
-        userId: _authService.currentUserDetails?.id ??
-            0, // Use authenticated user ID
+        userId: _authService.currentUserDetails!.uid,
         content: '📍 Shared a location',
-        createdAt: DateTime.now(),
         latitude: locationData['latitude'],
         longitude: locationData['longitude'],
         address: locationData['address'],
       );
 
       await _commentRepository.createComment(comment);
-      _loadComments();
+      setState(() {
+        _commentsFuture = _commentRepository.getCommentsByTask(widget.taskId);
+      });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -155,15 +185,15 @@ class _TaskCommentsState extends State<TaskComments> {
 
       final comment = Comment(
         taskId: widget.taskId,
-        userId: _authService.currentUserDetails?.id ??
-            0, // Use authenticated user ID
+        userId: _authService.currentUserDetails!.uid,
         content: '📷 Shared a photo\n🏷️ Tags: $labelTexts',
-        createdAt: DateTime.now(),
         photoPath: photoPath,
       );
 
       await _commentRepository.createComment(comment);
-      _loadComments();
+      setState(() {
+        _commentsFuture = _commentRepository.getCommentsByTask(widget.taskId);
+      });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,7 +213,7 @@ class _TaskCommentsState extends State<TaskComments> {
     }
   }
 
-  void _showAttachmentOptions() {
+  Future<void> _showAttachmentOptions() async {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -195,7 +225,10 @@ class _TaskCommentsState extends State<TaskComments> {
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
-                _uploadPhoto(fromCamera: false);
+                setState(() => _isLoading = true);
+                _uploadPhoto(fromCamera: false).then((_) {
+                  setState(() => _isLoading = false);
+                });
               },
             ),
             ListTile(
@@ -203,7 +236,10 @@ class _TaskCommentsState extends State<TaskComments> {
               title: const Text('Take Photo'),
               onTap: () {
                 Navigator.pop(context);
-                _uploadPhoto(fromCamera: true);
+                setState(() => _isLoading = true);
+                _uploadPhoto(fromCamera: true).then((_) {
+                  setState(() => _isLoading = false);
+                });
               },
             ),
             ListTile(
@@ -211,7 +247,10 @@ class _TaskCommentsState extends State<TaskComments> {
               title: const Text('Share Location'),
               onTap: () {
                 Navigator.pop(context);
-                _shareLocation();
+                setState(() => _isLoading = true);
+                _shareLocation().then((_) {
+                  setState(() => _isLoading = false);
+                });
               },
             ),
           ],
@@ -220,128 +259,164 @@ class _TaskCommentsState extends State<TaskComments> {
     );
   }
 
+  Future<void> _handleSend() async {
+    if (_commentController.text.trim().isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _addComment();
+
+      _commentController.clear();
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _refreshComments,
-            child: FutureBuilder<List<Comment>>(
-              future: _commentsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshComments,
+                child: FutureBuilder<List<Comment>>(
+                  future: _commentsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    }
 
-                final comments = snapshot.data ?? [];
+                    final comments = snapshot.data ?? [];
 
-                if (comments.isEmpty) {
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 100),
-                          child: Text('No comments yet'),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: comments.length,
-                  itemBuilder: (context, index) {
-                    final comment = comments[index];
-                    return ListTile(
-                      title: Text(comment.user?.username ??
-                          'User id: ${comment.userId}'),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(comment.content),
-                          if (comment.address != null)
-                            InkWell(
-                              onTap: () => _locationService.openMap(
-                                comment.latitude!,
-                                comment.longitude!,
-                              ),
+                    if (comments.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 100),
                               child: Text(
-                                '📍 ${comment.address}',
+                                'No comments yet! 🎉\nBe the first to comment!',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    color: Theme.of(context).primaryColor),
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
-                          if (comment.photoPath != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Image.file(
-                                File(comment.photoPath!),
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                          ),
                         ],
-                      ),
-                      trailing: Text(_formatDate(comment.createdAt)),
+                      );
+                    }
+
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = comments[index];
+                        return ListTile(
+                          title: Text(comment.user?.displayName ??
+                              'User id: ${comment.userId}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(comment.content),
+                              if (comment.address != null)
+                                InkWell(
+                                  onTap: () => _locationService.openMap(
+                                    comment.latitude!,
+                                    comment.longitude!,
+                                  ),
+                                  child: Text(
+                                    '📍 ${comment.address}',
+                                    style: TextStyle(
+                                        color: Theme.of(context).primaryColor),
+                                  ),
+                                ),
+                              if (comment.photoPath != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Image.file(
+                                    File(comment.photoPath!),
+                                    height: 200,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          trailing:
+                              Text(_formatDate(comment.createdAt.toDate())),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.attach_file),
-                onPressed: _showAttachmentOptions,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _commentController,
-                  decoration: const InputDecoration(
-                    hintText: 'Add a comment...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _addComment(),
                 ),
               ),
-              const SizedBox(width: 16),
-              IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _addComment,
+            ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
-            ],
-          ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.attach_file),
+                    onPressed: _isLoading ? null : _showAttachmentOptions,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _commentController,
+                      decoration: const InputDecoration(
+                        hintText: 'Add a comment...',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      maxLines: null,
+                      enabled: !_isLoading,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _isLoading ? null : _handleSend(),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: _isLoading ? null : _handleSend,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
+        if (_isLoading)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ),
       ],
     );
   }

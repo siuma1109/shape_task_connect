@@ -1,31 +1,33 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class User {
-  final int? id;
+  final String uid;
   final String email;
-  final String username;
-  final String? password;
+  final String displayName;
+  final Timestamp createdAt;
 
   User({
-    this.id,
+    required this.uid,
     required this.email,
-    required this.username,
-    this.password,
-  });
+    required this.displayName,
+    Timestamp? createdAt,
+  }) : createdAt = createdAt ?? Timestamp.now();
 
   Map<String, dynamic> toMap() {
-    final map = {
+    return {
+      'uid': uid,
       'email': email,
-      'username': username,
-      'password': password,
+      'displayName': displayName,
+      'created_at': createdAt,
     };
-    if (id != null) map['id'] = id.toString();
-    return map;
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      id: map['id'],
+      uid: map['uid'],
       email: map['email'],
-      username: map['username'],
+      displayName: map['displayName'],
+      createdAt: map['created_at'],
     );
   }
 }

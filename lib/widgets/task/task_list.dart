@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import 'task_card.dart';
 
 class TaskList extends StatelessWidget {
-  final List<TaskItem> tasks;
+  final List<Task> tasks;
   final bool isLoading;
   final Future<void> Function() onRefresh;
   final EdgeInsetsGeometry? padding;

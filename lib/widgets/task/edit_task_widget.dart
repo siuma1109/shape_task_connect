@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/task_item.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditTaskWidget extends StatefulWidget {
-  final int taskId;
+  final String taskId;
   final Future<void> Function()? onRefresh;
 
   const EditTaskWidget({
@@ -12,6 +13,20 @@ class EditTaskWidget extends StatefulWidget {
     required this.taskId,
     required this.onRefresh,
   });
+
+  static Future<void> show(BuildContext context, String taskId,
+      {Future<void> Function()? onRefresh}) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      builder: (context) =>
+          EditTaskWidget(taskId: taskId, onRefresh: onRefresh),
+    );
+  }
 
   @override
   State<EditTaskWidget> createState() => _EditTaskWidgetState();
@@ -22,14 +37,16 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   bool _isLoading = true;
-  TaskItem? _task;
-  late DateTime _selectedDueDate;
+  Task? _task;
+  late Timestamp _selectedDueDate;
   late bool _isCompleted;
 
   @override
   void initState() {
     super.initState();
-    _selectedDueDate = DateTime.now().add(const Duration(days: 1));
+    _selectedDueDate = Timestamp.fromDate(
+      DateTime.now().add(const Duration(days: 1)),
+    );
     _isCompleted = false;
     _loadTask();
   }
@@ -69,13 +86,13 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
   Future<void> _selectDueDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDueDate,
+      initialDate: _selectedDueDate.toDate(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null && picked != _selectedDueDate) {
+    if (picked != null && picked != _selectedDueDate.toDate()) {
       setState(() {
-        _selectedDueDate = picked;
+        _selectedDueDate = Timestamp.fromDate(picked);
       });
     }
   }
@@ -97,12 +114,11 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
     }
 
     try {
-      final updatedTask = TaskItem(
+      final updatedTask = Task(
         id: _task!.id,
         title: title,
         description: description,
         createdBy: _task!.createdBy,
-        createdAt: _task!.createdAt,
         dueDate: _selectedDueDate,
         completed: _isCompleted,
       );
@@ -133,73 +149,126 @@ class _EditTaskWidgetState extends State<EditTaskWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Task'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
+    return Container(
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          _buildHandle(),
+          _buildHeader(),
+          _isLoading
+              ? const Expanded(
+                  child: Center(child: CircularProgressIndicator()))
+              : Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildForm(),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey[200]!,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Edit Task',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          TextButton(
             onPressed: _updateTask,
+            child: const Text('Save'),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: null,
-                    minLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    title: const Text('Due Date'),
-                    subtitle: Text(
-                      '${_selectedDueDate.year}-${_selectedDueDate.month}-${_selectedDueDate.day}',
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: _selectDueDate,
-                    tileColor: Theme.of(context).cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Mark as Completed'),
-                    value: _isCompleted,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _isCompleted = value;
-                      });
-                    },
-                    tileColor: Theme.of(context).cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(
+            labelText: 'Title',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: null,
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _descriptionController,
+          decoration: const InputDecoration(
+            labelText: 'Description',
+            border: OutlineInputBorder(),
+          ),
+          maxLines: null,
+          minLines: 3,
+        ),
+        const SizedBox(height: 16),
+        ListTile(
+          title: const Text('Due Date'),
+          subtitle: Text(
+            '${_selectedDueDate.toDate().year}-${_selectedDueDate.toDate().month}-${_selectedDueDate.toDate().day}',
+          ),
+          trailing: const Icon(Icons.calendar_today),
+          onTap: _selectDueDate,
+          tileColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Theme.of(context).dividerColor),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: const Text('Mark as Completed'),
+          value: _isCompleted,
+          onChanged: (bool value) {
+            setState(() {
+              _isCompleted = value;
+            });
+          },
+          tileColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Theme.of(context).dividerColor),
+          ),
+        ),
+      ],
     );
   }
 }

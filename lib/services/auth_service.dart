@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:shape_task_connect/models/user.dart';
 import '../repositories/user_repository.dart';
-import '../models/user.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,6 +9,8 @@ class AuthService {
   static const String _lastUserKey = 'last_logged_in_user';
   static const String _biometricEnabledKey = 'biometric_enabled';
   final UserRepository _userRepository;
+  final firebase_auth.FirebaseAuth _firebaseAuth =
+      firebase_auth.FirebaseAuth.instance;
   bool _isLoggedIn = false;
   User? _currentUserDetails;
   final LocalAuthentication _localAuth = LocalAuthentication();
@@ -14,7 +18,17 @@ class AuthService {
 
   AuthService(this._userRepository, this._prefs);
 
-  User? get currentUserDetails => _currentUserDetails;
+  User? get currentUserDetails {
+    firebase_auth.User? currentFirebaseUser = _firebaseAuth.currentUser;
+    if (currentFirebaseUser == null) {
+      return null;
+    }
+
+    return User(
+        uid: currentFirebaseUser.uid,
+        email: currentFirebaseUser.email ?? '',
+        displayName: currentFirebaseUser.displayName ?? '');
+  }
 
   Future<bool> checkLoginStatus() async {
     return _isLoggedIn;
@@ -41,21 +55,62 @@ class AuthService {
   }
 
   Future<bool> login(String email, String password) async {
-    bool isValid = await _userRepository.validateUser(email, password);
-    if (isValid) {
-      _isLoggedIn = true;
-      _currentUserDetails = await _userRepository.getUserByEmail(email);
-      await _prefs.setString(_lastUserKey, email);
+    try {
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user != null) {
+        _isLoggedIn = true;
+        _currentUserDetails = await _userRepository.getUserByEmail(email);
+        await _prefs.setString(_lastUserKey, email);
+        return true;
+      }
+      return false;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      print('Failed to login: ${e.message}');
+      return false;
     }
-    return isValid;
   }
 
   Future<bool> register(String email, String username, String password) async {
-    final user = User(email: email, username: username, password: password);
-    return await _userRepository.createUser(user);
+    try {
+      // First create the user in Firebase Auth
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await userCredential.user!.updateDisplayName(username);
+
+      // Create user in Firestore
+      final user = User(
+        uid: userCredential.user!.uid,
+        email: email,
+        displayName: username,
+      );
+
+      await _userRepository.createUser(user);
+
+      return userCredential.user != null;
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'weak-password':
+          throw Exception('The password provided is too weak.');
+        case 'email-already-in-use':
+          throw Exception('An account already exists for that email.');
+        case 'invalid-email':
+          throw Exception('The email address is not valid.');
+        default:
+          throw Exception(e.message ?? 'Registration failed.');
+      }
+    } catch (e) {
+      throw Exception('Failed to register user.');
+    }
   }
 
   Future<void> logout() async {
+    await _firebaseAuth.signOut();
     _isLoggedIn = false;
     // Don't remove _lastUserKey or biometric settings
   }
@@ -135,7 +190,7 @@ class AuthService {
 
       if (didAuthenticate && lastUser != null) {
         _isLoggedIn = true;
-        _currentUserDetails = await _userRepository.getUserByEmail(lastUser);
+        //_currentUserDetails = await _userRepository.getUserByEmail(lastUser);
         return true;
       }
       return false;

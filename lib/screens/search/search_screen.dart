@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/task_item.dart';
-import '../../models/user.dart';
+import 'package:shape_task_connect/models/user.dart';
+import '../../models/task.dart';
 import '../../repositories/task_repository.dart';
 import '../../repositories/user_repository.dart';
 import '../../widgets/user/user_details.dart';
@@ -22,8 +22,8 @@ class SearchScreenState extends State<SearchScreen> {
   bool _isSearchingTasks = false;
   bool _isLoading = false;
   List<User> _userSuggestions = [];
-  List<TaskItem> _allTasks = [];
-  List<TaskItem> _filteredTasks = [];
+  List<Task> _allTasks = [];
+  List<Task> _filteredTasks = [];
 
   @override
   void initState() {
@@ -57,6 +57,7 @@ class SearchScreenState extends State<SearchScreen> {
         }
       }
     } catch (e) {
+      print('Error loading tasks: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -165,21 +166,42 @@ class SearchScreenState extends State<SearchScreen> {
       return;
     }
 
-    try {
-      // Search users by keyword
-      final users = await _userRepository.searchUsers(query);
-      if (mounted) {
-        setState(() {
-          _userSuggestions = users;
-          _isSearchingTasks = false;
-        });
+    if (_isSearchingTasks) {
+      try {
+        final tasks = await _taskRepository.searchTasks(query);
+        if (mounted) {
+          setState(() {
+            _filteredTasks = tasks;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _filteredTasks = [];
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error searching tasks. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _userSuggestions = [];
-          _isSearchingTasks = false;
-        });
+    } else {
+      try {
+        final users = await _userRepository.searchUsers(query);
+        print('users: ${users.length}');
+        if (mounted) {
+          setState(() {
+            _userSuggestions = users;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _userSuggestions = [];
+          });
+        }
       }
     }
   }
@@ -219,9 +241,9 @@ class SearchScreenState extends State<SearchScreen> {
         final user = _userSuggestions[index];
         return ListTile(
           leading: CircleAvatar(
-            child: Text(user.username[0].toUpperCase()),
+            child: Text(user.displayName[0].toUpperCase()),
           ),
-          title: Text(user.username),
+          title: Text(user.displayName),
           subtitle: Text(user.email),
           onTap: () {
             Navigator.of(context).push(
