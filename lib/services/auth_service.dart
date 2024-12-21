@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shape_task_connect/models/user.dart';
+import 'package:shape_task_connect/services/google_login_service.dart';
 import '../repositories/user_repository.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -109,8 +110,45 @@ class AuthService {
     }
   }
 
+  Future<bool> loginWithGoogle() async {
+    final googleOuthService = GoogleOuthService();
+    final googleUser = await googleOuthService.signIn();
+    final GoogleSignInAuthentication? googleAuth =
+        await googleUser?.authentication;
+
+    if (googleAuth == null) {
+      return false;
+    }
+
+    final credential = firebase_auth.GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    User? user =
+        await _userRepository.getUserByEmail(userCredential.user!.email!);
+    if (user == null) {
+      await _userRepository.createUser(User(
+        uid: userCredential.user!.uid,
+        email: userCredential.user!.email!,
+        displayName: userCredential.user!.displayName!,
+      ));
+      user = await _userRepository.getUserByEmail(userCredential.user!.email!);
+    }
+    if (user != null) {
+      _isLoggedIn = true;
+      _currentUserDetails = user;
+      await _prefs.setString(_lastUserKey, userCredential.user!.email!);
+      return true;
+    }
+
+    return false;
+  }
+
   Future<void> logout() async {
     await _firebaseAuth.signOut();
+    await GoogleOuthService().signOut();
     _isLoggedIn = false;
     // Don't remove _lastUserKey or biometric settings
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:shape_task_connect/services/google_login_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/validators.dart';
 
@@ -126,6 +127,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _google_login() async {
+    setState(() => _isLoading = true);
+    try {
+      final success = await widget.authService.loginWithGoogle();
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google login failed')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,6 +239,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onPressed: _login,
                                   child: const Text('Login'),
                                 ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: _isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    key: const Key('googleLoginButton'),
+                                    onPressed: _google_login,
+                                    child: const Text('Sign in with Google'),
+                                  ),
+                          ),
                         ],
                       ),
                       const Spacer(),
