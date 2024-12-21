@@ -61,7 +61,6 @@ class AuthService {
         email: email,
         password: password,
       );
-
       if (userCredential.user != null) {
         _isLoggedIn = true;
         _currentUserDetails = await _userRepository.getUserByEmail(email);
@@ -147,10 +146,9 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _firebaseAuth.signOut();
-    await GoogleOuthService().signOut();
+    //await _firebaseAuth.signOut();
+    //await GoogleOuthService().signOut();
     _isLoggedIn = false;
-    // Don't remove _lastUserKey or biometric settings
   }
 
   Future<bool> canUseBiometrics() async {
@@ -202,9 +200,9 @@ class AuthService {
 
   Future<bool> authenticateWithBiometrics() async {
     try {
-      final lastUser = _prefs.getString(_lastUserKey);
-      final isBiometricEnabled = lastUser != null &&
-          _prefs.getBool('${_biometricEnabledKey}_$lastUser') == true;
+      final userEmail = _prefs.getString(_lastUserKey);
+      final isBiometricEnabled = userEmail != null &&
+          _prefs.getBool('${_biometricEnabledKey}_$userEmail') == true;
 
       if (!isBiometricEnabled) {
         throw Exception('biometric_not_setup');
@@ -226,9 +224,7 @@ class AuthService {
         ),
       );
 
-      if (didAuthenticate && lastUser != null) {
-        _isLoggedIn = true;
-        //_currentUserDetails = await _userRepository.getUserByEmail(lastUser);
+      if (didAuthenticate && userEmail != null) {
         return true;
       }
       return false;

@@ -48,8 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
       final success = await widget.authService.authenticateWithBiometrics();
 
-      setState(() => _isLoading = false);
-
       if (!mounted) return;
 
       if (success) {
@@ -60,13 +58,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
       );
     }
+    setState(() => _isLoading = false);
   }
 
   Future<void> _login() async {
@@ -149,126 +147,191 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Login',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 32),
-                      Text(
-                        'Welcome Back',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sign in to continue',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: CupertinoColors.systemGrey,
-                            ),
-                      ),
-                      const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(CupertinoIcons.mail),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: Validators.email,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(CupertinoIcons.lock),
-                        ),
-                        obscureText: true,
-                        textInputAction: TextInputAction.done,
-                        validator: Validators.password,
-                      ),
-                      const SizedBox(height: 24),
-                      Column(
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Login',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          body: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (_supportsBiometrics)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: CupertinoButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : _authenticateWithBiometrics,
-                                color: CupertinoColors.systemBlue,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Login with $_biometricType',
-                                      style: const TextStyle(
-                                        color: CupertinoColors.white,
-                                      ),
+                          const SizedBox(height: 32),
+                          Text(
+                            'Welcome Back',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Sign in to continue',
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: CupertinoColors.systemGrey,
                                     ),
-                                  ],
+                          ),
+                          const SizedBox(height: 32),
+                          TextFormField(
+                            controller: _emailController,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(CupertinoIcons.mail),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            validator: Validators.email,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: Icon(CupertinoIcons.lock),
+                            ),
+                            obscureText: true,
+                            textInputAction: TextInputAction.done,
+                            validator: Validators.password,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            key: const Key('loginButton'),
+                            onPressed: _isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50),
+                              minimumSize: const Size(double.infinity, 48),
+                              elevation: 2,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.email, color: Colors.white),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Login with Email',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              if (_supportsBiometrics)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16.0),
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : _authenticateWithBiometrics,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2196F3),
+                                      minimumSize:
+                                          const Size(double.infinity, 48),
+                                      elevation: 2,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.fingerprint,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          'Login with $_biometricType',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16.0),
+                                child: ElevatedButton(
+                                  key: const Key('googleLoginButton'),
+                                  onPressed: _isLoading ? null : _google_login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    minimumSize:
+                                        const Size(double.infinity, 48),
+                                    elevation: 2,
+                                    side: const BorderSide(
+                                      color: Colors.grey,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.g_mobiledata,
+                                        color: Colors.red,
+                                        size: 28,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Sign in with Google',
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : ElevatedButton(
-                                  key: const Key('loginButton'),
-                                  onPressed: _login,
-                                  child: const Text('Login'),
-                                ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16.0),
-                            child: _isLoading
-                                ? const Center(
-                                    child: CircularProgressIndicator())
-                                : ElevatedButton(
-                                    key: const Key('googleLoginButton'),
-                                    onPressed: _google_login,
-                                    child: const Text('Sign in with Google'),
-                                  ),
+                            ],
                           ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                            child: const Text(
+                                'Don\'t have an account? Register now'),
+                          ),
+                          const SizedBox(height: 16),
                         ],
                       ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/register');
-                        },
-                        child:
-                            const Text('Don\'t have an account? Register now'),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                    ),
                   ),
                 ),
+              ],
+            ),
+          ),
+        ),
+        if (_isLoading)
+          Container(
+            color: Colors.black54,
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 }
