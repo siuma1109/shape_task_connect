@@ -106,18 +106,18 @@ class _TaskActionsState extends State<TaskActions> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (!isOwner)
-          IconButton(
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(_isJoined ? Icons.group_remove : Icons.group_add),
-            onPressed: _toggleJoin,
-            tooltip: _isJoined ? 'Leave task' : 'Join task',
-          ),
+        // if (!isOwner)
+        //   IconButton(
+        //     icon: _isLoading
+        //         ? const SizedBox(
+        //             width: 24,
+        //             height: 24,
+        //             child: CircularProgressIndicator(strokeWidth: 2),
+        //           )
+        //         : Icon(_isJoined ? Icons.group_remove : Icons.group_add),
+        //     onPressed: _toggleJoin,
+        //     tooltip: _isJoined ? 'Leave task' : 'Join task',
+        //   ),
         if (isOwner)
           IconButton(
             icon: const Icon(Icons.edit),
