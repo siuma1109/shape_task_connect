@@ -47,7 +47,7 @@ class _TaskCardState extends State<TaskCard> {
       child: widget.isClickable && !widget.isInDetails
           ? InkWell(
               onTap: () async {
-                final result = await TaskComments.show(
+                await TaskComments.show(
                   context,
                   widget.task,
                   onRefresh: widget.onRefresh,

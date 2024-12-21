@@ -10,14 +10,14 @@ class AuthService {
   static const String _lastUserKey = 'last_logged_in_user';
   static const String _biometricEnabledKey = 'biometric_enabled';
   final UserRepository _userRepository;
-  final firebase_auth.FirebaseAuth _firebaseAuth =
-      firebase_auth.FirebaseAuth.instance;
+  final firebase_auth.FirebaseAuth _firebaseAuth;
   bool _isLoggedIn = false;
-  User? _currentUserDetails;
   final LocalAuthentication _localAuth = LocalAuthentication();
   final SharedPreferences _prefs;
 
-  AuthService(this._userRepository, this._prefs);
+  AuthService(this._userRepository, this._prefs,
+      [firebase_auth.FirebaseAuth? firebaseAuth])
+      : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance;
 
   User? get currentUserDetails {
     firebase_auth.User? currentFirebaseUser = _firebaseAuth.currentUser;
@@ -63,7 +63,6 @@ class AuthService {
       );
       if (userCredential.user != null) {
         _isLoggedIn = true;
-        _currentUserDetails = await _userRepository.getUserByEmail(email);
         await _prefs.setString(_lastUserKey, email);
         return true;
       }
@@ -137,7 +136,6 @@ class AuthService {
     }
     if (user != null) {
       _isLoggedIn = true;
-      _currentUserDetails = user;
       await _prefs.setString(_lastUserKey, userCredential.user!.email!);
       return true;
     }
@@ -224,7 +222,7 @@ class AuthService {
         ),
       );
 
-      if (didAuthenticate && userEmail != null) {
+      if (didAuthenticate) {
         return true;
       }
       return false;

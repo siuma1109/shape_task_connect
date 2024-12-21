@@ -4,7 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LocationService {
-  final loc.Location location = loc.Location();
+  loc.Location location = loc.Location();
 
   Future<bool> checkPermission(BuildContext context) async {
     var permissionGranted = await location.hasPermission();
