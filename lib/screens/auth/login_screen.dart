@@ -151,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Scaffold(
           appBar: AppBar(
             title: const Text(
-              'Login',
+              'Task Connect',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
